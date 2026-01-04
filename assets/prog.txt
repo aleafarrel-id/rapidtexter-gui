@@ -1,0 +1,136 @@
+int main()
+return 0;
+#include <iostream>
+using namespace std;
+cin >> x;
+cout << x;
+int a = 1;
+float b = 2.5;
+char c = 'A';
+bool d = true;
+if (true)
+else
+for (int i=0; i<10; i++)
+while (true)
+do
+break;
+continue;
+switch (x)
+case 1:
+default:
+void func()
+return;
+class MyClass
+public:
+private:
+protected:
+struct Data
+enum Mode
+new
+delete
+try
+catch
+throw
+static
+const
+friend
+virtual
+this
+sizeof(int)
+auto
+nullptr
+true
+false
+x++;
+y--;
+a += b;
+x = y + z;
+x = y - z;
+x = y * z;
+x = y / z;
+x = y % z;
+x == y
+x != y
+x > y
+x < y
+x >= y
+x <= y
+&&
+||
+!x
+string s;
+vector<int> v;
+map<int,int> m;
+v.push_back(1);
+v.pop_back();
+v.size();
+v.empty();
+v.clear();
+s.length();
+s.substr(0,1);
+#define MAX 100
+#ifdef DEBUG
+#endif
+typedef int* ptr;
+namespace std
+template <class T>
+inline
+extern
+volatile
+goto label;
+label:
+union
+unsigned
+signed
+short
+long
+double
+void* p = nullptr;
+&x
+p
+p->next
+arr[0]
+arr[i]
+std::string
+std::vector
+std::cout
+std::cin
+std::endl
+std::cerr
+getline(cin, s);
+math.h
+cmath
+pow(2,2)
+sqrt(4)
+abs(-1)
+max(a,b)
+min(a,b)
+swap(a,b)
+sort(v.begin(), v.end())
+rand()
+time(0)
+fstream
+ifstream
+ofstream
+open()
+close()
+read()
+write()
+operator
+explicit
+mutable
+register
+typename
+asm
+constexpr
+alignas
+alignof
+decltype
+noexcept
+static_assert
+thread_local
+char str
+const char*
+argc
+argv
+main(argc, argv)

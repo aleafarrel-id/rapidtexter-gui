@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapid Texter - GUI Design</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+        @import url('https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: #0d1117;
+            color: #8b949e;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: #161b22;
+            padding: 10px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #21262d;
+            font-size: 13px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-item i {
+            font-size: 12px;
+            color: #58a6ff;
+        }
+
+        .status-label {
+            color: #58a6ff;
+            font-weight: 500;
+        }
+
+        .status-value {
+            color: #c9d1d9;
+        }
+
+        .status-divider {
+            color: #30363d;
+            margin: 0 16px;
+        }
+
+        .sfx-toggle {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+
+        .sfx-toggle:hover {
+            background: #21262d;
+        }
+
+        .sfx-toggle.off .status-value {
+            color: #f85149;
+        }
+
+        /* Content */
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 32px;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 1000px;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .terminal-box {
+            background: transparent;
+        }
+
+        /* Logo - SVG Based */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .logo-text {
+            font-size: 72px;
+            font-weight: 700;
+            color: #58a6ff;
+            letter-spacing: -4px;
+            line-height: 1;
+        }
+
+        .logo-subtitle {
+            color: #8b949e;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 6px;
+            margin-top: 12px;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        /* Menu Items */
+        .menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 40px 0;
+        }
+
+        .menu-item {
+            background: transparent;
+            border: 1px solid #21262d;
+            border-left: 3px solid #30363d;
+            padding: 18px 24px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .menu-item:hover {
+            background: #161b22;
+            border-left-color: #58a6ff;
+            transform: translateX(4px);
+        }
+
+        .menu-item.green:hover {
+            border-left-color: #3fb950;
+        }
+
+        .menu-item.yellow:hover {
+            border-left-color: #d29922;
+        }
+
+        .menu-item.red:hover {
+            border-left-color: #f85149;
+        }
+
+        .menu-item.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .menu-item.locked:hover {
+            transform: none;
+            background: transparent;
+            border-left-color: #30363d;
+        }
+
+        .menu-key {
+            background: #21262d;
+            border: 1px solid #30363d;
+            padding: 6px 14px;
+            font-weight: 600;
+            color: #8b949e;
+            min-width: 45px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .menu-item:hover .menu-key {
+            background: #30363d;
+            color: #c9d1d9;
+        }
+
+        .menu-label {
+            flex: 1;
+            font-size: 15px;
+            color: #c9d1d9;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-label i {
+            font-size: 16px;
+            color: #58a6ff;
+            opacity: 0.8;
+        }
+
+        .menu-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .menu-status {
+            font-size: 11px;
+            padding: 4px 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border: 1px solid;
+        }
+
+        .menu-status.passed {
+            background: rgba(63, 185, 80, 0.1);
+            color: #3fb950;
+            border-color: #3fb950;
+        }
+
+        .menu-status.locked {
+            background: rgba(248, 81, 73, 0.1);
+            color: #f85149;
+            border-color: #f85149;
+        }
+
+        .menu-status.certified {
+            background: rgba(88, 166, 255, 0.1);
+            color: #58a6ff;
+            border-color: #58a6ff;
+        }
+
+        .menu-req {
+            font-size: 10px;
+            color: #484f58;
+        }
+
+        /* Input Field */
+        .input-group {
+            margin: 40px 0;
+        }
+
+        .input-label {
+            color: #8b949e;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .input-field {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-bottom: 2px solid #30363d;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            color: #c9d1d9;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-bottom-color: #58a6ff;
+            background: #161b22;
+        }
+
+        /* Gameplay */
+        .game-container {
+            position: relative;
+        }
+
+        .game-timer {
+            font-size: 48px;
+            font-weight: 600;
+            color: #58a6ff;
+            margin-bottom: 24px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .text-display {
+            background: transparent;
+            border: 1px solid #21262d;
+            border-left: 3px solid #30363d;
+            padding: 48px;
+            font-size: 28px;
+            line-height: 1.6;
+            min-height: 220px;
+            letter-spacing: 0.5px;
+        }
+
+        .char {
+            display: inline-block;
+        }
+
+        .char.correct {
+            color: #c9d1d9;
+        }
+
+        .char.incorrect {
+            color: #f85149;
+            background: rgba(248, 81, 73, 0.15);
+        }
+
+        .char.current {
+            border-bottom: 2px solid #58a6ff;
+            animation: pulse 1s infinite;
+        }
+
+        .char.pending {
+            color: #484f58;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Results */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 40px 0;
+        }
+
+        .result-card {
+            background: transparent;
+            border: 1px solid #21262d;
+            border-left: 3px solid #30363d;
+            padding: 32px 24px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .result-card:hover {
+            background: #161b22;
+            border-left-color: #58a6ff;
+        }
+
+        .result-card.primary {
+            grid-column: span 3;
+            background: rgba(63, 185, 80, 0.05);
+            border-left-color: #3fb950;
+        }
+
+        .result-label {
+            font-size: 12px;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+        }
+
+        .result-value {
+            font-size: 42px;
+            font-weight: 600;
+            color: #c9d1d9;
+        }
+
+        .result-value.wpm {
+            font-size: 64px;
+            color: #3fb950;
+        }
+
+        .result-value.errors {
+            color: #f85149;
+        }
+
+        .result-message {
+            background: rgba(63, 185, 80, 0.1);
+            border: 1px solid #3fb950;
+            border-left: 3px solid #3fb950;
+            padding: 20px;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .result-message.failed {
+            background: rgba(248, 81, 73, 0.1);
+            border-color: #f85149;
+        }
+
+        .result-message h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #3fb950;
+        }
+
+        .result-message.failed h3 {
+            color: #f85149;
+        }
+
+        .result-message p {
+            color: #8b949e;
+            font-size: 13px;
+        }
+
+        /* History Table */
+        .history-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .history-header h2 {
+            color: #c9d1d9;
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .history-info {
+            color: #8b949e;
+            font-size: 13px;
+        }
+
+        .history-table {
+            border: 1px solid #21262d;
+            margin: 20px 0;
+        }
+
+        .table-header {
+            background: #161b22;
+            border-bottom: 1px solid #21262d;
+            padding: 14px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1.2fr 0.8fr 1fr 1.5fr;
+            gap: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #8b949e;
+            text-transform: uppercase;
+        }
+
+        .table-row {
+            padding: 14px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1.2fr 0.8fr 1fr 1.5fr;
+            gap: 12px;
+            border-bottom: 1px solid #21262d;
+            font-size: 13px;
+            transition: all 0.15s ease;
+        }
+
+        .table-row:hover {
+            background: #161b22;
+        }
+
+        .table-row.passed {
+            border-left: 2px solid #3fb950;
+        }
+
+        .table-row.failed {
+            border-left: 2px solid #f85149;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .page-btn {
+            background: transparent;
+            border: 1px solid #30363d;
+            padding: 10px 18px;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .page-btn:hover {
+            background: #161b22;
+            border-color: #58a6ff;
+            color: #58a6ff;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Navigation */
+        .nav-hint {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 12px;
+            color: #484f58;
+        }
+
+        .nav-demo {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: 1px solid #30363d;
+            padding: 10px 20px;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .nav-btn i {
+            font-size: 12px;
+        }
+
+        .nav-btn:hover {
+            background: #161b22;
+            border-color: #58a6ff;
+            color: #58a6ff;
+        }
+
+        .nav-btn.reset {
+            border-color: #d29922;
+            color: #d29922;
+        }
+
+        .nav-btn.reset:hover {
+            background: rgba(210, 153, 34, 0.1);
+            border-color: #d29922;
+            color: #d29922;
+        }
+
+        .nav-btn.danger {
+            border-color: #f85149;
+            color: #f85149;
+        }
+
+        .nav-btn.danger:hover {
+            background: rgba(248, 81, 73, 0.1);
+        }
+
+        .nav-btn.primary {
+            background: rgba(63, 185, 80, 0.1);
+            border-color: #3fb950;
+            color: #3fb950;
+        }
+
+        /* Headers */
+        h2 {
+            text-align: center;
+            color: #c9d1d9;
+            font-size: 24px;
+            margin-bottom: 40px;
+            font-weight: 500;
+        }
+
+        /* Warning Box */
+        .warning-box {
+            text-align: center;
+            color: #d29922;
+            font-size: 14px;
+            padding: 12px 20px;
+            background: rgba(210, 153, 34, 0.1);
+            border: 1px solid #d29922;
+            border-left: 3px solid #d29922;
+            margin: 20px 0;
+        }
+
+        /* Confirmation Box */
+        .confirm-box {
+            background: rgba(248, 81, 73, 0.05);
+            border: 1px solid #f85149;
+            border-left: 3px solid #f85149;
+            padding: 40px;
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .confirm-box h3 {
+            color: #f85149;
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .confirm-box p {
+            color: #8b949e;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .confirm-box .warning-text {
+            color: #d29922;
+            font-size: 12px;
+            margin-top: 16px;
+        }
+
+        /* Overlay */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 17, 23, 0.9);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        .overlay-content {
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .overlay-content h3 {
+            color: #c9d1d9;
+            font-size: 18px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        /* Dev Navigation */
+        .dev-nav {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 50;
+        }
+
+        .dev-nav button {
+            background: #21262d;
+            border: 1px solid #30363d;
+            padding: 8px 16px;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: inherit;
+            transition: all 0.15s ease;
+        }
+
+        .dev-nav button:hover {
+            background: #30363d;
+            color: #c9d1d9;
+        }
+
+        .congrats-banner {
+            background: rgba(63, 185, 80, 0.08);
+            border: 1px solid #3fb950;
+            border-left: 3px solid #3fb950;
+            padding: 20px;
+            text-align: center;
+            margin: 24px 0;
+        }
+
+        .congrats-banner h3 {
+            font-size: 16px;
+            color: #3fb950;
+            margin-bottom: 8px;
+        }
+
+        .congrats-banner p {
+            color: #8b949e;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div class="status-item">
+                    <i class="bx bx-world"></i>
+                    <span class="status-label">Lang:</span>
+                    <span class="status-value" id="statusLang">N/A</span>
+                </div>
+                <span class="status-divider">|</span>
+                <div class="status-item">
+                    <i class="far fa-clock"></i>
+                    <span class="status-label">Time:</span>
+                    <span class="status-value" id="statusTime">30s</span>
+                </div>
+                <span class="status-divider">|</span>
+                <div class="status-item">
+                    <i class="bx bx-joystick"></i>
+                    <span class="status-label">Mode:</span>
+                    <span class="status-value" id="statusMode">N/A</span>
+                </div>
+            </div>
+            <div class="status-item sfx-toggle" id="sfxToggle" onclick="toggleSFX()">
+                <i class="fas fa-volume-up" id="sfxIcon"></i>
+                <span class="status-label">SFX:</span>
+                <span class="status-value" id="sfxValue">On</span>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <!-- Screen 1: Main Menu -->
+            <div class="screen active" id="screen-menu">
+                <div class="terminal-box">
+                    <div class="logo-container">
+                        <div class="logo-text">RAPID</div>
+                        <div class="logo-subtitle">TEXTER</div>
+                    </div>
+
+                    <div class="menu-list">
+                        <div class="menu-item green" onclick="goToScreen('screen-language')">
+                            <div class="menu-key">[1]</div>
+                            <div class="menu-label"><i class="fas fa-play"></i> Start Game</div>
+                        </div>
+                        <div class="menu-item yellow" onclick="goToScreen('screen-history')">
+                            <div class="menu-key">[2]</div>
+                            <div class="menu-label"><i class="fas fa-history"></i> Show History</div>
+                        </div>
+                        <div class="menu-item red">
+                            <div class="menu-key">(Q)</div>
+                            <div class="menu-label"><i class="fas fa-times-circle"></i> Quit</div>
+                        </div>
+                    </div>
+
+                    <div class="nav-hint">Click menu items to navigate • Click SFX to toggle sound</div>
+                </div>
+            </div>
+
+            <!-- Screen 2: Language Selection -->
+            <div class="screen" id="screen-language">
+                <div class="terminal-box">
+                    <h2>SELECT LANGUAGE</h2>
+                    <div class="menu-list">
+                        <div class="menu-item" onclick="setLang('ID'); goToScreen('screen-duration')">
+                            <div class="menu-key">[1]</div>
+                            <div class="menu-label"><i class="bx bxs-flag-alt"></i> Indonesia (ID)</div>
+                        </div>
+                        <div class="menu-item" onclick="setLang('EN'); goToScreen('screen-duration')">
+                            <div class="menu-key">[2]</div>
+                            <div class="menu-label"><i class="bx bxs-flag-alt"></i> English (EN)</div>
+                        </div>
+                    </div>
+                    <div class="nav-demo">
+                        <div class="nav-btn" onclick="goToScreen('screen-menu')"><i class="fas fa-arrow-left"></i> Back
+                            (ESC)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 3: Duration Selection -->
+            <div class="screen" id="screen-duration">
+                <div class="terminal-box">
+                    <h2>SELECT DURATION</h2>
+                    <div class="menu-list">
+                        <div class="menu-item" onclick="setTime('15s'); goToScreen('screen-mode')">
+                            <div class="menu-key">[1]</div>
+                            <div class="menu-label"><i class="far fa-clock"></i> 15 Seconds</div>
+                        </div>
+                        <div class="menu-item" onclick="setTime('30s'); goToScreen('screen-mode')">
+                            <div class="menu-key">[2]</div>
+                            <div class="menu-label"><i class="far fa-clock"></i> 30 Seconds</div>
+                        </div>
+                        <div class="menu-item" onclick="setTime('60s'); goToScreen('screen-mode')">
+                            <div class="menu-key">[3]</div>
+                            <div class="menu-label"><i class="far fa-clock"></i> 60 Seconds</div>
+                        </div>
+                        <div class="menu-item" onclick="showCustomTimeOverlay()">
+                            <div class="menu-key">[4]</div>
+                            <div class="menu-label"><i class="fas fa-sliders-h"></i> Custom</div>
+                        </div>
+                        <div class="menu-item" onclick="setTime('∞'); goToScreen('screen-mode')">
+                            <div class="menu-key">[5]</div>
+                            <div class="menu-label"><i class="fas fa-infinity"></i> Tanpa Waktu</div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px; color: #3fb950; font-size: 13px;">
+                        <i class="fas fa-check-circle"></i> [Enter] Use Default (30s)
+                    </div>
+                    <div class="nav-demo">
+                        <div class="nav-btn" onclick="goToScreen('screen-language')"><i class="fas fa-arrow-left"></i>
+                            Back (ESC)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 4: Mode Selection -->
+            <div class="screen" id="screen-mode">
+                <div class="terminal-box">
+                    <h2>SELECT MODE</h2>
+                    <div class="menu-list">
+                        <div class="menu-item" onclick="setMode('Manual'); goToScreen('screen-manual-setup')">
+                            <div class="menu-key">[1]</div>
+                            <div class="menu-label"><i class="fas fa-hand-pointer"></i> Manual Mode</div>
+                        </div>
+                        <div class="menu-item" onclick="setMode('Campaign'); goToScreen('screen-campaign')">
+                            <div class="menu-key">[2]</div>
+                            <div class="menu-label"><i class="fas fa-trophy"></i> Campaign Mode</div>
+                        </div>
+                    </div>
+                    <div class="nav-demo">
+                        <div class="nav-btn" onclick="goToScreen('screen-duration')"><i class="fas fa-arrow-left"></i>
+                            Back (ESC)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 5: Manual Setup -->
+            <div class="screen" id="screen-manual-setup">
+                <div class="terminal-box">
+                    <h2>MANUAL SETUP</h2>
+                    <div class="input-group">
+                        <label class="input-label"><i class="fas fa-tachometer-alt"></i> Enter Target WPM:</label>
+                        <input type="number" class="input-field" placeholder="e.g. 60" min="1" max="200">
+                    </div>
+                    <div class="nav-demo">
+                        <div class="nav-btn" onclick="goToScreen('screen-mode')"><i class="fas fa-arrow-left"></i> Back
+                            (ESC)</div>
+                        <div class="nav-btn primary" onclick="goToScreen('screen-gameplay')">Confirm (ENTER) <i
+                                class="fas fa-arrow-right"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 6: Campaign - Locked Version -->
+            <div class="screen" id="screen-campaign">
+                <div class="terminal-box">
+                    <h2>CAMPAIGN DIFFICULTY</h2>
+                    <div class="menu-list">
+                        <div class="menu-item green" onclick="goToScreen('screen-gameplay')">
+                            <div class="menu-key">[1]</div>
+                            <div class="menu-label"><i class="fas fa-seedling"></i> Easy</div>
+                            <div class="menu-info">
+                                <div class="menu-status passed">[PASSED]</div>
+                                <div class="menu-req">Min: 40 WPM, 80% Acc</div>
+                            </div>
+                        </div>
+                        <div class="menu-item locked">
+                            <div class="menu-key">[2]</div>
+                            <div class="menu-label"><i class="fas fa-chart-line"></i> Medium</div>
+                            <div class="menu-info">
+                                <div class="menu-status locked">[LOCKED]</div>
+                                <div class="menu-req">Need: Easy passed</div>
+                            </div>
+                        </div>
+                        <div class="menu-item locked">
+                            <div class="menu-key">[3]</div>
+                            <div class="menu-label"><i class="fas fa-fire"></i> Hard</div>
+                            <div class="menu-info">
+                                <div class="menu-status locked">[LOCKED]</div>
+                                <div class="menu-req">Need: Medium passed</div>
+                            </div>
+                        </div>
+                        <div class="menu-item" style="border-left-color: #58a6ff;"
+                            onclick="goToScreen('screen-gameplay')">
+                            <div class="menu-key"
+                                style="background: rgba(88, 166, 255, 0.1); border-color: #58a6ff; color: #58a6ff;">[4]
+                            </div>
+                            <div class="menu-label"><i class="fas fa-code"></i> Programmer Mode</div>
+                            <div class="menu-info">
+                                <div class="menu-status certified">[AVAILABLE]</div>
+                                <div class="menu-req">50 WPM, 90% for Cert</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav-demo">
+                        <div class="nav-btn" onclick="goToScreen('screen-mode')"><i class="fas fa-arrow-left"></i> Back
+                            (ESC)</div>
+                        <div class="nav-btn" onclick="goToScreen('screen-credits')"><i class="fas fa-users"></i> Credits
+                            (C)</div>
+                        <div class="nav-btn danger" onclick="goToScreen('screen-reset-progress')"><i
+                                class="fas fa-redo"></i> Reset Progress (R)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 6b: Campaign - All Passed -->
+            <div class="screen" id="screen-campaign-passed">
+                <div class="terminal-box">
+                    <h2>CAMPAIGN DIFFICULTY</h2>
+                    <div class="menu-list">
+                        <div class="menu-item green" onclick="goToScreen('screen-gameplay')">
+                            <div class="menu-key">[1]</div>
+                            <div class="menu-label"><i class="fas fa-seedling"></i> Easy</div>
+                            <div class="menu-info">
+                                <div class="menu-status passed">[PASSED]</div>
+                                <div class="menu-req">Min: 40 WPM, 80% Acc</div>
+                            </div>
+                        </div>
+                        <div class="menu-item green" onclick="goToScreen('screen-gameplay')">
+                            <div class="menu-key">[2]</div>
+                            <div class="menu-label"><i class="fas fa-chart-line"></i> Medium</div>
+                            <div class="menu-info">
+                                <div class="menu-status passed">[PASSED]</div>
+                                <div class="menu-req">Min: 60 WPM, 90% Acc</div>
+                            </div>
+                        </div>
+                        <div class="menu-item green" onclick="goToScreen('screen-gameplay')">
+                            <div class="menu-key">[3]</div>
+                            <div class="menu-label"><i class="fas fa-fire"></i> Hard</div>
+                            <div class="menu-info">
+                                <div class="menu-status passed">[PASSED]</div>
+                                <div class="menu-req">Min: 70 WPM, 90% Acc</div>
+                            </div>
+                        </div>
+                        <div class="menu-item" style="border-left-color: #58a6ff;"
+                            onclick="goToScreen('screen-gameplay')">
+                            <div class="menu-key"
+                                style="background: rgba(88, 166, 255, 0.1); border-color: #58a6ff; color: #58a6ff;">[4]
+                            </div>
+                            <div class="menu-label"><i class="fas fa-code"></i> Programmer Mode</div>
+                            <div class="menu-info">
+                                <div class="menu-status certified">[CERTIFIED]</div>
+                                <div class="menu-req">50 WPM, 90% for Cert</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="congrats-banner">
+                        <h3><i class="fas fa-trophy"></i> CONGRATULATIONS!</h3>
+                        <p>You have completed all levels!</p>
+                    </div>
+                    <div class="nav-demo">
+                        <div class="nav-btn" onclick="goToScreen('screen-mode')"><i class="fas fa-arrow-left"></i> Back
+                            (ESC)</div>
+                        <div class="nav-btn" onclick="goToScreen('screen-credits')"><i class="fas fa-users"></i> Credits
+                            (C)</div>
+                        <div class="nav-btn danger" onclick="goToScreen('screen-reset-progress')"><i
+                                class="fas fa-redo"></i> Reset Progress (R)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 7: Gameplay -->
+            <div class="screen" id="screen-gameplay">
+                <div class="terminal-box">
+                    <div class="game-container">
+                        <div class="game-timer">9</div>
+                        <div class="text-display">
+                            <span class="char correct">d</span><span class="char correct">a</span><span
+                                class="char correct">r</span><span class="char correct">a</span><span
+                                class="char correct">h</span><span class="char correct"> </span><span
+                                class="char correct">s</span><span class="char correct">a</span><span
+                                class="char correct">l</span><span class="char correct">a</span><span
+                                class="char correct">h</span><span class="char correct"> </span><span
+                                class="char incorrect">t</span><span class="char incorrect">i</span><span
+                                class="char incorrect">d</span><span class="char incorrect">a</span><span
+                                class="char incorrect">k</span><span class="char current"> </span><span
+                                class="char pending">m</span><span class="char pending">u</span><span
+                                class="char pending">l</span><span class="char pending">u</span><span
+                                class="char pending">t</span><span class="char pending"> </span><span
+                                class="char pending">a</span><span class="char pending">d</span><span
+                                class="char pending">a</span>
+                        </div>
+                        <div class="warning-box">CAPS LOCK ON</div>
+                        <div class="nav-demo">
+                            <div class="nav-btn reset"><i class="fas fa-redo"></i> Reset (TAB)</div>
+                            <div class="nav-btn" onclick="goToScreen('screen-campaign')"><i class="fas fa-times"></i>
+                                Exit (ESC)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 8: Results -->
+            <div class="screen" id="screen-results">
+                <div class="terminal-box">
+                    <h2>RESULTS</h2>
+                    <div class="results-grid">
+                        <div class="result-card primary">
+                            <div class="result-value wpm">84 WPM</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Accuracy</div>
+                            <div class="result-value">99%</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Time</div>
+                            <div class="result-value">15.0s</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Errors</div>
+                            <div class="result-value errors">1</div>
+                        </div>
+                    </div>
+                    <div class="result-message">
+                        <h3><i class="fas fa-check-circle"></i> LEVEL PASSED! Medium Unlocked!</h3>
+                        <p>Great job! You've achieved the requirements to unlock the next level.</p>
+                    </div>
+                    <div class="nav-demo">
+                        <div class="nav-btn reset" onclick="goToScreen('screen-gameplay')"><i class="fas fa-redo"></i>
+                            Retry (R)</div>
+                        <div class="nav-btn primary" onclick="goToScreen('screen-campaign')"><i
+                                class="fas fa-arrow-right"></i> Continue (ENTER)</div>
+                        <div class="nav-btn" onclick="goToScreen('screen-history')"><i class="fas fa-history"></i>
+                            History (H)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 9: History -->
+            <div class="screen" id="screen-history">
+                <div class="terminal-box" style="max-width: 100%;">
+                    <div class="history-header">
+                        <h2><i class="fas fa-history"></i> GAME HISTORY</h2>
+                        <div class="history-info">
+                            <div>Page 1 of 2 (7 total entries)</div>
+                        </div>
+                    </div>
+                    <div class="history-table">
+                        <div class="table-header">
+                            <div>WPM</div>
+                            <div>Accuracy</div>
+                            <div>Target</div>
+                            <div>Errors</div>
+                            <div>Difficulty</div>
+                            <div>Lang</div>
+                            <div>Mode</div>
+                            <div>Date/Time</div>
+                        </div>
+                        <div class="table-row passed">
+                            <div style="color: #3fb950; font-weight: 600;">84.8</div>
+                            <div>99.1%</div>
+                            <div>40</div>
+                            <div>1</div>
+                            <div>Easy</div>
+                            <div>ID</div>
+                            <div>Campaign</div>
+                            <div>03/01/2026 15:48</div>
+                        </div>
+                        <div class="table-row passed">
+                            <div style="color: #3fb950; font-weight: 600;">70.0</div>
+                            <div>93.6%</div>
+                            <div>40</div>
+                            <div>12</div>
+                            <div>Easy</div>
+                            <div>ID</div>
+                            <div>Campaign</div>
+                            <div>03/01/2026 14:58</div>
+                        </div>
+                        <div class="table-row failed">
+                            <div style="color: #f85149; font-weight: 600;">69.6</div>
+                            <div>93.0%</div>
+                            <div>70</div>
+                            <div>13</div>
+                            <div>Hard</div>
+                            <div>ID</div>
+                            <div>Campaign</div>
+                            <div>02/01/2026 17:58</div>
+                        </div>
+                    </div>
+                    <div class="pagination">
+                        <button class="page-btn" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+                        <button class="page-btn">Next <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="nav-demo">
+                        <div class="nav-btn" onclick="goToScreen('screen-menu')"><i class="fas fa-arrow-left"></i> Back
+                            (ESC)</div>
+                        <div class="nav-btn danger" onclick="goToScreen('screen-reset-history')"><i
+                                class="fas fa-trash-alt"></i> Clear History (C)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 10: Reset History Confirmation -->
+            <div class="screen" id="screen-reset-history">
+                <div class="terminal-box">
+                    <h2><i class="fas fa-trash-alt"></i> CLEAR HISTORY</h2>
+                    <div class="confirm-box">
+                        <h3>Are you sure?</h3>
+                        <p>This will permanently delete all your game history.</p>
+                        <p>This action cannot be undone.</p>
+                        <p class="warning-text"><i class="fas fa-exclamation-triangle"></i> All 7 entries will be
+                            deleted</p>
+                    </div>
+                    <div class="nav-demo">
+                        <div class="nav-btn" onclick="goToScreen('screen-history')"><i class="fas fa-arrow-left"></i>
+                            Cancel (ESC)</div>
+                        <div class="nav-btn danger"><i class="fas fa-trash-alt"></i> Confirm Clear (ENTER)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 11: Reset Progress Confirmation -->
+            <div class="screen" id="screen-reset-progress">
+                <div class="terminal-box">
+                    <h2><i class="fas fa-redo"></i> RESET PROGRESS</h2>
+                    <div class="confirm-box">
+                        <h3>Are you sure?</h3>
+                        <p>This will reset all your campaign progress.</p>
+                        <p>All unlocked levels will be locked again.</p>
+                        <p class="warning-text"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone
+                        </p>
+                    </div>
+                    <div class="nav-demo">
+                        <div class="nav-btn" onclick="goToScreen('screen-campaign')"><i class="fas fa-arrow-left"></i>
+                            Cancel (ESC)</div>
+                        <div class="nav-btn danger"><i class="fas fa-redo"></i> Confirm Reset (ENTER)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 12: Credits -->
+            <div class="screen" id="screen-credits">
+                <div class="terminal-box">
+                    <h2><i class="fas fa-users"></i> CREDITS</h2>
+                    <div style="text-align: center; color: #58a6ff; margin: 50px 0;">
+                        <p style="font-size: 14px; margin-bottom: 30px; color: #8b949e; letter-spacing: 1px;">DEVELOPED
+                            BY:</p>
+                        <div
+                            style="display: flex; flex-direction: column; gap: 16px; font-size: 18px; font-weight: 500;">
+                            <div><i class="fas fa-user-circle"></i> Alea Farrel</div>
+                            <div><i class="fas fa-user-circle"></i> Hensa Katelu</div>
+                            <div><i class="fas fa-user-circle"></i> Yanuar Adi Candra</div>
+                            <div><i class="fas fa-user-circle"></i> Arif Wibowo P.</div>
+                            <div><i class="fas fa-user-circle"></i> Aria Mahendra U.</div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; color: #3fb950; font-size: 16px; margin: 50px 0;">
+                        <i class="fas fa-heart"></i> Thank you for playing!
+                    </div>
+                    <div class="nav-demo">
+                        <div class="nav-btn" onclick="goToScreen('screen-campaign')"><i class="fas fa-arrow-left"></i>
+                            Return (ENTER)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Time Overlay -->
+    <div class="overlay" id="customTimeOverlay">
+        <div class="overlay-content">
+            <h3><i class="fas fa-clock"></i> Custom Duration</h3>
+            <div class="input-group" style="margin: 24px 0;">
+                <label class="input-label">Enter duration in seconds (5-300):</label>
+                <input type="number" class="input-field" id="customTimeInput" placeholder="e.g. 45" min="5" max="300">
+            </div>
+            <div class="nav-demo" style="margin-top: 24px;">
+                <div class="nav-btn" onclick="hideCustomTimeOverlay()"><i class="fas fa-times"></i> Cancel</div>
+                <div class="nav-btn primary" onclick="applyCustomTime()"><i class="fas fa-check"></i> Apply</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dev Navigation -->
+    <div class="dev-nav">
+        <button onclick="goToScreen('screen-menu')">Menu</button>
+        <button onclick="goToScreen('screen-campaign')">Campaign (Locked)</button>
+        <button onclick="goToScreen('screen-campaign-passed')">Campaign (Passed)</button>
+        <button onclick="goToScreen('screen-gameplay')">Gameplay</button>
+        <button onclick="goToScreen('screen-results')">Results</button>
+        <button onclick="goToScreen('screen-reset-history')">Reset History</button>
+        <button onclick="goToScreen('screen-reset-progress')">Reset Progress</button>
+    </div>
+
+    <script>
+        function goToScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function setLang(lang) {
+            document.getElementById('statusLang').textContent = lang;
+        }
+
+        function setTime(time) {
+            document.getElementById('statusTime').textContent = time;
+        }
+
+        function setMode(mode) {
+            document.getElementById('statusMode').textContent = mode;
+        }
+
+        function toggleSFX() {
+            const toggle = document.getElementById('sfxToggle');
+            const icon = document.getElementById('sfxIcon');
+            const value = document.getElementById('sfxValue');
+
+            if (toggle.classList.contains('off')) {
+                toggle.classList.remove('off');
+                icon.className = 'fas fa-volume-up';
+                value.textContent = 'On';
+            } else {
+                toggle.classList.add('off');
+                icon.className = 'fas fa-volume-mute';
+                value.textContent = 'Off';
+            }
+        }
+
+        function showCustomTimeOverlay() {
+            document.getElementById('customTimeOverlay').classList.add('active');
+            document.getElementById('customTimeInput').focus();
+        }
+
+        function hideCustomTimeOverlay() {
+            document.getElementById('customTimeOverlay').classList.remove('active');
+        }
+
+        function applyCustomTime() {
+            const input = document.getElementById('customTimeInput');
+            let val = parseInt(input.value);
+            if (val >= 5 && val <= 300) {
+                setTime(val + 's');
+                hideCustomTimeOverlay();
+                goToScreen('screen-mode');
+            } else {
+                alert('Please enter a value between 5 and 300 seconds');
+            }
+        }
+    </script>
+</body>
+
+</html>

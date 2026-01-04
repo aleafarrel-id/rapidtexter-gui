@@ -1,0 +1,19 @@
+module qml
+
+singleton Theme 1.0 components/Theme.qml
+MenuItemC 1.0 components/MenuItemC.qml
+NavBtn 1.0 components/NavBtn.qml
+StatusBar 1.0 components/StatusBar.qml
+
+MainMenuPage 1.0 pages/MainMenuPage.qml
+LanguageMenuPage 1.0 pages/LanguageMenuPage.qml
+DurationMenuPage 1.0 pages/DurationMenuPage.qml
+CustomDurationPage 1.0 pages/CustomDurationPage.qml
+ModeMenuPage 1.0 pages/ModeMenuPage.qml
+ManualSetupPage 1.0 pages/ManualSetupPage.qml
+CampaignMenuPage 1.0 pages/CampaignMenuPage.qml
+ResultsPage 1.0 pages/ResultsPage.qml
+HistoryPage 1.0 pages/HistoryPage.qml
+CreditsPage 1.0 pages/CreditsPage.qml
+ResetHistoryPage 1.0 pages/ResetHistoryPage.qml
+ResetProgressPage 1.0 pages/ResetProgressPage.qml
