@@ -60,6 +60,7 @@ ApplicationWindow {
     property real lastAccuracy: 0
     property int lastErrors: 0
     property real lastTimeElapsed: 0
+    property bool lastLevelPassed: false
 
     ColumnLayout {
         anchors.fill: parent
@@ -73,8 +74,14 @@ ApplicationWindow {
             currentLanguage: mainWindow.currentLanguage
             currentTime: mainWindow.currentTime
             currentMode: mainWindow.currentMode
-            sfxEnabled: mainWindow.sfxEnabled
-            onSfxToggled: mainWindow.sfxEnabled = !mainWindow.sfxEnabled
+            sfxEnabled: GameBackend.sfxEnabled
+            onSfxToggled: {
+                GameBackend.toggleSfx();
+                // Play sound to confirm SFX is now ON
+                if (GameBackend.sfxEnabled) {
+                    GameBackend.playErrorSound();
+                }
+            }
         }
 
         // ====================================================================
@@ -486,6 +493,11 @@ ApplicationWindow {
             color: Theme.bgPrimary
             focus: true
 
+            // Force focus on input when page becomes active
+            StackView.onActivating: {
+                customDurInput.forceActiveFocus();
+            }
+
             Keys.onPressed: function (event) {
                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                     var seconds = parseInt(customDurInput.text) || 30;
@@ -541,7 +553,7 @@ ApplicationWindow {
                                 id: customDurInput
                                 anchors.fill: parent
                                 anchors.margins: Theme.paddingL
-                                text: "45"
+                                text: ""
                                 color: Theme.textPrimary
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.fontSizeXXL
@@ -553,6 +565,16 @@ ApplicationWindow {
                                 }
                                 selectByMouse: true
                                 Component.onCompleted: forceActiveFocus()
+
+                                // Placeholder text
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "Enter seconds..."
+                                    color: Theme.textMuted
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSizeXXL
+                                    visible: customDurInput.text.length === 0 && !customDurInput.activeFocus
+                                }
                             }
 
                             Text {
@@ -702,6 +724,11 @@ ApplicationWindow {
             focus: true
             property int targetWpm: 60
 
+            // Force focus on input when page becomes active
+            StackView.onActivating: {
+                wpmInput.forceActiveFocus();
+            }
+
             Keys.onPressed: function (event) {
                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                     // Save WPM and difficulty to mainWindow before starting game
@@ -758,7 +785,7 @@ ApplicationWindow {
                                 id: wpmInput
                                 anchors.fill: parent
                                 anchors.margins: Theme.paddingL
-                                text: "60"
+                                text: ""
                                 color: Theme.textPrimary
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.fontSizeXXL
@@ -770,6 +797,16 @@ ApplicationWindow {
                                 }
                                 selectByMouse: true
                                 Component.onCompleted: forceActiveFocus()
+
+                                // Placeholder text
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "Enter WPM..."
+                                    color: Theme.textMuted
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSizeXXL
+                                    visible: wpmInput.text.length === 0 && !wpmInput.activeFocus
+                                }
                             }
 
                             Text {
@@ -840,6 +877,16 @@ ApplicationWindow {
 
                 // Save to history via GameBackend
                 GameBackend.saveGameResult(wpm, accuracy, errors, mainWindow.currentTargetWPM, mainWindow.currentDifficulty, mainWindow.currentLanguage, mainWindow.currentMode);
+
+                // For Campaign mode, check if user passed and unlock next level
+                if (mainWindow.currentMode === "Campaign") {
+                    var passed = GameBackend.completeLevel(mainWindow.currentLanguage, mainWindow.currentDifficulty, wpm, accuracy);
+                    mainWindow.lastLevelPassed = passed;
+                } else {
+                    // For manual mode, just check if target WPM was met
+                    mainWindow.lastLevelPassed = (wpm >= mainWindow.currentTargetWPM);
+                }
+
                 stackView.push(resultsComponent);
             }
 
@@ -862,6 +909,14 @@ ApplicationWindow {
         Rectangle {
             color: Theme.bgPrimary
             focus: true
+
+            // Refresh trigger - increment to force UI update
+            property int refreshTrigger: 0
+
+            // Reload level states when returning to this page
+            StackView.onActivating: {
+                refreshTrigger++;
+            }
 
             Keys.onPressed: function (event) {
                 switch (event.key) {
@@ -913,44 +968,62 @@ ApplicationWindow {
                             keyText: "[1]"
                             iconSource: "qrc:/qt/qml/rapid_texter/assets/icons/leaf.svg"
                             labelText: "Easy"
-                            accentType: mainWindow.easyPassed ? "green" : "default"
-                            statusText: mainWindow.easyPassed ? "[PASSED]" : ""
-                            statusType: mainWindow.easyPassed ? "passed" : ""
+                            accentType: (refreshTrigger, GameBackend.isLevelCompleted(mainWindow.currentLanguage, "easy")) ? "green" : "default"
+                            statusText: (refreshTrigger, GameBackend.isLevelCompleted(mainWindow.currentLanguage, "easy")) ? "[PASSED]" : ""
+                            statusType: (refreshTrigger, GameBackend.isLevelCompleted(mainWindow.currentLanguage, "easy")) ? "passed" : ""
                             reqText: "Min: 40 WPM, 80% Acc"
-                            onClicked: stackView.push(gameplayComponent)
+                            onClicked: {
+                                mainWindow.currentDifficulty = "easy";
+                                mainWindow.currentTargetWPM = 40;
+                                stackView.push(gameplayComponent);
+                            }
                         }
                         MenuItemC {
                             keyText: "[2]"
                             iconSource: "qrc:/qt/qml/rapid_texter/assets/icons/trend-up.svg"
                             labelText: "Medium"
-                            locked: !mainWindow.easyPassed
-                            accentType: mainWindow.mediumPassed ? "green" : "default"
-                            statusText: mainWindow.mediumPassed ? "[PASSED]" : (mainWindow.easyPassed ? "" : "[LOCKED]")
-                            statusType: mainWindow.mediumPassed ? "passed" : (mainWindow.easyPassed ? "" : "locked")
-                            reqText: mainWindow.easyPassed ? "Min: 60 WPM, 90% Acc" : "Need: Easy passed"
-                            onClicked: if (mainWindow.easyPassed)
-                                stackView.push(gameplayComponent)
+                            locked: (refreshTrigger, !GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "medium"))
+                            accentType: (refreshTrigger, GameBackend.isLevelCompleted(mainWindow.currentLanguage, "medium")) ? "green" : "default"
+                            statusText: (refreshTrigger, GameBackend.isLevelCompleted(mainWindow.currentLanguage, "medium")) ? "[PASSED]" : ((refreshTrigger, !GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "medium")) ? "[LOCKED]" : "")
+                            statusType: (refreshTrigger, GameBackend.isLevelCompleted(mainWindow.currentLanguage, "medium")) ? "passed" : ((refreshTrigger, !GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "medium")) ? "locked" : "")
+                            reqText: (refreshTrigger, GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "medium")) ? "Min: 60 WPM, 90% Acc" : "Need: Easy passed"
+                            onClicked: {
+                                if (GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "medium")) {
+                                    mainWindow.currentDifficulty = "medium";
+                                    mainWindow.currentTargetWPM = 60;
+                                    stackView.push(gameplayComponent);
+                                }
+                            }
                         }
                         MenuItemC {
                             keyText: "[3]"
                             iconSource: "qrc:/qt/qml/rapid_texter/assets/icons/fire.svg"
                             labelText: "Hard"
-                            locked: !mainWindow.mediumPassed
-                            accentType: mainWindow.hardPassed ? "green" : "default"
-                            statusText: mainWindow.hardPassed ? "[PASSED]" : (mainWindow.mediumPassed ? "" : "[LOCKED]")
-                            statusType: mainWindow.hardPassed ? "passed" : (mainWindow.mediumPassed ? "" : "locked")
-                            reqText: mainWindow.mediumPassed ? "Min: 70 WPM, 90% Acc" : "Need: Medium passed"
-                            onClicked: if (mainWindow.mediumPassed)
-                                stackView.push(gameplayComponent)
+                            locked: (refreshTrigger, !GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "hard"))
+                            accentType: (refreshTrigger, GameBackend.isLevelCompleted(mainWindow.currentLanguage, "hard")) ? "green" : "default"
+                            statusText: (refreshTrigger, GameBackend.isLevelCompleted(mainWindow.currentLanguage, "hard")) ? "[PASSED]" : ((refreshTrigger, !GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "hard")) ? "[LOCKED]" : "")
+                            statusType: (refreshTrigger, GameBackend.isLevelCompleted(mainWindow.currentLanguage, "hard")) ? "passed" : ((refreshTrigger, !GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "hard")) ? "locked" : "")
+                            reqText: (refreshTrigger, GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "hard")) ? "Min: 70 WPM, 90% Acc" : "Need: Medium passed"
+                            onClicked: {
+                                if (GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "hard")) {
+                                    mainWindow.currentDifficulty = "hard";
+                                    mainWindow.currentTargetWPM = 70;
+                                    stackView.push(gameplayComponent);
+                                }
+                            }
                         }
                         MenuItemC {
                             keyText: "[4]"
                             iconSource: "qrc:/qt/qml/rapid_texter/assets/icons/monitor.svg"
                             labelText: "Programmer Mode"
-                            statusText: mainWindow.programmerCertified ? "[CERTIFIED]" : "[AVAILABLE]"
+                            statusText: GameBackend.isLevelCompleted(mainWindow.currentLanguage, "programmer") ? "[CERTIFIED]" : "[AVAILABLE]"
                             statusType: "certified"
                             reqText: "50 WPM, 90% for Cert"
-                            onClicked: stackView.push(gameplayComponent)
+                            onClicked: {
+                                mainWindow.currentDifficulty = "programmer";
+                                mainWindow.currentTargetWPM = 50;
+                                stackView.push(gameplayComponent);
+                            }
                         }
                     }
 
@@ -992,9 +1065,9 @@ ApplicationWindow {
 
             // Function to return to setup page (skip gameplay)
             function returnToSetup() {
-                // Pop twice: result -> gameplay -> setup page
-                stackView.pop();  // Pop result page
-                stackView.pop();  // Pop gameplay page
+                // Pop twice: results -> gameplay -> back to setup page (Campaign or Manual setup)
+                stackView.pop();  // Pop results page
+                stackView.pop();  // Pop gameplay page - now at setup (campaign menu or manual setup)
             }
 
             Keys.onPressed: function (event) {
@@ -1040,20 +1113,20 @@ ApplicationWindow {
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 100
-                        color: Theme.successBg
+                        color: mainWindow.lastLevelPassed ? Theme.successBg : Theme.dangerBg
                         border.width: 1
                         border.color: Theme.borderPrimary
 
                         Rectangle {
                             width: 3
                             height: parent.height
-                            color: Theme.accentGreen
+                            color: mainWindow.lastLevelPassed ? Theme.accentGreen : Theme.accentRed
                         }
 
                         Text {
                             anchors.centerIn: parent
                             text: Math.round(mainWindow.lastWpm) + " WPM"
-                            color: Theme.accentGreen
+                            color: mainWindow.lastLevelPassed ? Theme.accentGreen : Theme.accentRed
                             font.family: Theme.fontFamily
                             font.pixelSize: 48
                             font.bold: true
@@ -1124,19 +1197,19 @@ ApplicationWindow {
                         }
                     }
 
-                    // Pass message
+                    // Pass/Fail message
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.topMargin: 20
                         Layout.preferredHeight: passCol.implicitHeight + 30
-                        color: Theme.successBg
+                        color: mainWindow.lastLevelPassed ? Theme.successBg : Theme.dangerBg
                         border.width: 1
-                        border.color: Theme.accentGreen
+                        border.color: mainWindow.lastLevelPassed ? Theme.accentGreen : Theme.accentRed
 
                         Rectangle {
                             width: 3
                             height: parent.height
-                            color: Theme.accentGreen
+                            color: mainWindow.lastLevelPassed ? Theme.accentGreen : Theme.accentRed
                         }
 
                         Column {
@@ -1146,8 +1219,8 @@ ApplicationWindow {
 
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: "✓ LEVEL PASSED!"
-                                color: Theme.accentGreen
+                                text: mainWindow.lastLevelPassed ? (mainWindow.currentMode === "Campaign" ? "✓ LEVEL PASSED!" : "✓ TARGET REACHED!") : (mainWindow.currentMode === "Campaign" ? "✗ LEVEL FAILED" : "✗ TARGET NOT REACHED")
+                                color: mainWindow.lastLevelPassed ? Theme.accentGreen : Theme.accentRed
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.fontSizeXXL
                                 font.bold: true
@@ -1155,7 +1228,7 @@ ApplicationWindow {
 
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: "Great job! You've achieved the requirements."
+                                text: mainWindow.lastLevelPassed ? "Great job! You've achieved the requirements." : (mainWindow.currentMode === "Campaign" ? "Keep practicing to unlock the next level." : "Keep practicing to reach your target WPM.")
                                 color: Theme.textSecondary
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.fontSizeM
@@ -1209,6 +1282,11 @@ ApplicationWindow {
             }
 
             Component.onCompleted: {
+                loadHistory();
+            }
+
+            // Reload data when returning to this page (e.g., after clearing history)
+            StackView.onActivating: {
                 loadHistory();
             }
 
@@ -1408,10 +1486,59 @@ ApplicationWindow {
                         }
 
                         ListView {
+                            id: historyListView
                             width: parent.width
                             height: parent.height - 40
                             clip: true
                             model: historyData
+
+                            // Empty state when no history
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "transparent"
+                                visible: historyData.length === 0
+
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: Theme.spacingL
+
+                                    Item {
+                                        width: 48
+                                        height: 48
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        Image {
+                                            id: emptyHistIcon
+                                            source: "qrc:/qt/qml/rapid_texter/assets/icons/history.svg"
+                                            anchors.fill: parent
+                                            sourceSize: Qt.size(48, 48)
+                                            visible: false
+                                        }
+                                        ColorOverlay {
+                                            anchors.fill: emptyHistIcon
+                                            source: emptyHistIcon
+                                            color: Theme.textMuted
+                                            opacity: 0.5
+                                        }
+                                    }
+
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "No game history yet"
+                                        color: Theme.textMuted
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.fontSizeL
+                                    }
+
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "Play some games to see your results here!"
+                                        color: Theme.textMuted
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.fontSizeM
+                                        opacity: 0.7
+                                    }
+                                }
+                            }
 
                             delegate: Rectangle {
                                 width: ListView.view.width
@@ -1697,7 +1824,7 @@ ApplicationWindow {
                 switch (event.key) {
                 case Qt.Key_Return:
                 case Qt.Key_Enter:
-                    console.log("History cleared");
+                    GameBackend.clearHistory();
                     stackView.pop();
                     event.accepted = true;
                     break;
@@ -1806,7 +1933,7 @@ ApplicationWindow {
                             labelText: "Confirm (ENTER)"
                             variant: "danger"
                             onClicked: {
-                                console.log("History cleared");
+                                GameBackend.clearHistory();
                                 stackView.pop();
                             }
                         }
@@ -1830,9 +1957,7 @@ ApplicationWindow {
                 switch (event.key) {
                 case Qt.Key_Return:
                 case Qt.Key_Enter:
-                    mainWindow.easyPassed = false;
-                    mainWindow.mediumPassed = false;
-                    mainWindow.hardPassed = false;
+                    GameBackend.resetProgress();
                     stackView.pop();
                     event.accepted = true;
                     break;
@@ -1948,9 +2073,7 @@ ApplicationWindow {
                             labelText: "Confirm (ENTER)"
                             variant: "danger"
                             onClicked: {
-                                mainWindow.easyPassed = false;
-                                mainWindow.mediumPassed = false;
-                                mainWindow.hardPassed = false;
+                                GameBackend.resetProgress();
                                 stackView.pop();
                             }
                         }

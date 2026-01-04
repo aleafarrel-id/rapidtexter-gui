@@ -165,7 +165,12 @@ void GameBackend::saveGameResult(double wpm, double accuracy, int errors,
     entry.accuracy = accuracy;
     entry.errors = errors;
     entry.targetWPM = targetWPM;
-    entry.difficulty = difficulty.toStdString();
+    // Capitalize difficulty for display (e.g., "easy" -> "Easy")
+    QString capitalizedDiff = difficulty;
+    if (!capitalizedDiff.isEmpty()) {
+        capitalizedDiff[0] = capitalizedDiff[0].toUpper();
+    }
+    entry.difficulty = capitalizedDiff.toStdString();
     entry.language = language.toUpper().toStdString();
     entry.mode = mode.toStdString();
     // timestamp is set automatically by HistoryManager

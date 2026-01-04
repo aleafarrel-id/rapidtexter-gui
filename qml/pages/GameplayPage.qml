@@ -17,11 +17,14 @@ Rectangle {
     // Target text to type (will be set by parent)
     property string targetText: "darah salah tidak mulut ada di situ berbunyi melihat sekali"
 
-    // User's typed text
-    property string typedText: ""
+    // User's typed text - use list for better reactivity
+    property var typedChars: []
 
-    // Current cursor position
-    property int cursorPosition: 0
+    // Computed property for backward compatibility
+    property string typedText: typedChars.join("")
+
+    // Current cursor position - ALWAYS equals typedChars.length to prevent desync
+    property int cursorPosition: typedChars.length
 
     // Time remaining (seconds), -1 for unlimited
     property int timeRemaining: 15
@@ -40,6 +43,7 @@ Rectangle {
     property int incorrectChars: 0
     property int totalKeystrokes: 0  // Every keystroke (not backspace)
     property real startTime: 0  // Timestamp when game started
+    property bool gameEnded: false  // Prevent double gameCompleted signals
 
     // ========================================================================
     // SIGNALS
@@ -75,11 +79,17 @@ Rectangle {
 
     function getCharState(index) {
         if (index < cursorPosition) {
-            // Already typed
-            if (index < typedText.length && typedText[index] === targetText[index]) {
-                return "correct";
+            // Already typed - check against typed array
+            if (index < typedChars.length) {
+                var typedChar = typedChars[index];
+                var targetChar = targetText.charAt(index);
+                if (typedChar === targetChar) {
+                    return "correct";
+                } else {
+                    return "incorrect";
+                }
             } else {
-                return "incorrect";
+                return "pending";  // Cursor moved but no char typed (shouldn't happen)
             }
         } else if (index === cursorPosition) {
             return "current";
@@ -103,29 +113,31 @@ Rectangle {
         if (cursorPosition <= 0)
             return false;
 
-        var prevIndex = cursorPosition - 1;
-        var prevChar = targetText[prevIndex];
+        // Calculate locked limit (matching TUI logic from GameEngine.cpp)
+        var lockedLimit = 0;
 
-        // If previous char was a space and it was typed correctly, check if the word before was all correct
-        if (prevChar === " " && typedText[prevIndex] === " ") {
-            // Find the word that just ended
-            for (var i = 0; i < wordInfo.length; i++) {
-                if (wordInfo[i].endIndex === prevIndex - 1) {
-                    // Check if this word was typed correctly
-                    var allCorrect = true;
-                    for (var j = wordInfo[i].startIndex; j <= wordInfo[i].endIndex; j++) {
-                        if (typedText[j] !== targetText[j]) {
+        // Find the nearest checkpoint (previous word that's completely correct)
+        for (var i = cursorPosition - 1; i >= 0; i--) {
+            if (i < targetText.length && targetText.charAt(i) === " ") {
+                // Found a space, check if everything up to this point is correct
+                var allCorrect = true;
+                if (i < typedChars.length) {
+                    for (var k = 0; k <= i; k++) {
+                        if (k >= typedChars.length || typedChars[k] !== targetText.charAt(k)) {
                             allCorrect = false;
                             break;
                         }
                     }
-                    if (allCorrect)
-                        return false; // Can't delete into a correctly completed word
-                    break;
+                    if (allCorrect) {
+                        lockedLimit = i + 1;
+                        break;
+                    }
                 }
             }
         }
-        return true;
+
+        // Can only delete if above the lock limit
+        return cursorPosition > lockedLimit;
     }
 
     // Calculate game results (matching original TUI logic from Stats.h)
@@ -154,21 +166,30 @@ Rectangle {
             startTime = Date.now();  // Record start time
         }
 
-        if (text.length > 0 && cursorPosition < targetText.length) {
-            typedText += text;
+        // cursorPosition is computed from typedChars.length, so save current position before push
+        var positionBeforePush = cursorPosition;
+
+        if (text.length > 0 && positionBeforePush < targetText.length) {
+            // Add character to array - this automatically updates cursorPosition
+            var newTypedChars = typedChars.slice();  // Create copy
+            newTypedChars.push(text);
+            typedChars = newTypedChars;  // Trigger property change, cursorPosition now = length
+
             totalKeystrokes++;  // Count every keystroke (per original logic)
 
-            if (text === targetText[cursorPosition]) {
+            // Compare against position BEFORE the push (not the new cursorPosition)
+            if (text === targetText.charAt(positionBeforePush)) {
                 correctChars++;
                 // No sound on correct keystroke (per user request)
             } else {
                 incorrectChars++;  // Errors - only increases, never decreases
                 GameBackend.playErrorSound();    // Play SFX for incorrect keystroke
             }
-            cursorPosition++;
+            // NOTE: cursorPosition++ removed - it's now computed from typedChars.length
 
-            // Check if completed
-            if (cursorPosition >= targetText.length) {
+            // Check if completed (cursorPosition is already updated since we pushed)
+            if (cursorPosition >= targetText.length && !gameEnded) {
+                gameEnded = true;  // Prevent double firing
                 var results = calculateResults();
                 gameCompleted(results.wpm, results.accuracy, incorrectChars, results.timeElapsed);
             }
@@ -176,19 +197,15 @@ Rectangle {
     }
 
     function resetGame() {
-        typedText = "";
-        cursorPosition = 0;
+        typedChars = [];  // Reset array - cursorPosition automatically becomes 0
         correctChars = 0;
         incorrectChars = 0;
         totalKeystrokes = 0;
         gameStarted = false;
+        gameEnded = false;  // Reset the flag
         startTime = 0;
         timeRemaining = timeLimit;
     }
-
-    // ========================================================================
-    // KEY HANDLING
-    // ========================================================================
 
     // ========================================================================
     // KEY HANDLING
@@ -220,8 +237,10 @@ Rectangle {
                 event.accepted = true;
             } else if (event.key === Qt.Key_Backspace) {
                 if (canDeleteAtPosition()) {
-                    typedText = typedText.slice(0, -1);
-                    cursorPosition--;
+                    // Remove last character from array - cursorPosition automatically decrements
+                    var newTypedChars = typedChars.slice(0, -1);
+                    typedChars = newTypedChars;
+                    // NOTE: cursorPosition-- removed - it's computed from typedChars.length
                 }
                 event.accepted = true;
             }
@@ -275,8 +294,9 @@ Rectangle {
         onTriggered: {
             if (gameplayPage.timeRemaining > 0) {
                 gameplayPage.timeRemaining--;
-                if (gameplayPage.timeRemaining === 0) {
+                if (gameplayPage.timeRemaining === 0 && !gameplayPage.gameEnded) {
                     // Time's up!
+                    gameplayPage.gameEnded = true;  // Prevent double firing
                     var results = gameplayPage.calculateResults();
                     gameplayPage.gameCompleted(results.wpm, results.accuracy, gameplayPage.incorrectChars, results.timeElapsed);
                 }
