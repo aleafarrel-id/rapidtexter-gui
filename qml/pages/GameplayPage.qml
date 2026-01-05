@@ -5,10 +5,16 @@ import Qt5Compat.GraphicalEffects
 import rapid_texter
 import "../components"
 
-Rectangle {
+FocusScope {
     id: gameplayPage
-    color: Theme.bgPrimary
     focus: true
+
+    // Background
+    Rectangle {
+        anchors.fill: parent
+        color: Theme.bgPrimary
+        z: -100
+    }
 
     // ========================================================================
     // PROPERTIES - Game State
@@ -214,14 +220,18 @@ Rectangle {
     // Hidden input to capture text and trigger virtual keyboard
     TextInput {
         id: inputHandler
-        visible: false // Hidden but active
-        focus: true    // Auto-focus handled by Page
+        visible: true  // Must be visible to receive focus
+        opacity: 0     // Hide visually
+        width: 0
+        height: 0 // Minimize footprint
+        focus: true    // Auto-focus handled by FocusScope delegation!
         enabled: true
         activeFocusOnTab: false // Avoid tab stealing focus accidentally
 
-        // Keep focus
+        // Keep focus (Backup)
         onFocusChanged: {
-            if (!focus && gameplayPage.visible) {
+            if (!focus && StackView.status === StackView.Active) {
+                // If we lose focus while active, try to grab it back
                 forceActiveFocus();
             }
         }
@@ -233,6 +243,7 @@ Rectangle {
                 resetClicked();
                 event.accepted = true;
             } else if (event.key === Qt.Key_Escape) {
+                // resetGame() removed to prevent UI freeze/lag on exit (destruction handles cleanup)
                 exitClicked();
                 event.accepted = true;
             } else if (event.key === Qt.Key_Backspace) {
@@ -263,13 +274,6 @@ Rectangle {
                 // Clear input to keep it ready for next char
                 text = "";
             }
-        }
-    }
-
-    // Auto-focus when page becomes visible
-    onVisibleChanged: {
-        if (visible) {
-            inputHandler.forceActiveFocus();
         }
     }
 

@@ -63,7 +63,7 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
-                    text: statusBar.currentLanguage
+                    text: statusBar.currentLanguage.toUpperCase()
                     color: Theme.textPrimary
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeM
@@ -245,4 +245,3 @@ Rectangle {
         }
     }
 }
-

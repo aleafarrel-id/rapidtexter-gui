@@ -32,10 +32,6 @@ Rectangle {
             historyClicked();
             event.accepted = true;
             break;
-        case Qt.Key_Escape:
-            continueClicked();
-            event.accepted = true;
-            break;
         }
     }
 
@@ -208,5 +204,3 @@ Rectangle {
         }
     }
 }
-
-

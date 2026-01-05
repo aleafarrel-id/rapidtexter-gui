@@ -33,6 +33,7 @@ ApplicationWindow {
     property string currentMode: "-"
     property string currentDifficulty: "easy"  // Default difficulty for TextProvider
     property int currentTargetWPM: 60          // Target WPM for manual mode
+    property string originalLanguage: ""        // Stores original language for Programmer Mode restoration
     property bool sfxEnabled: GameBackend.sfxEnabled
 
     property int currentDuration: {
@@ -91,6 +92,7 @@ ApplicationWindow {
             id: stackView
             Layout.fillWidth: true
             Layout.fillHeight: true
+            focus: true
             initialItem: mainMenuComponent
 
             onCurrentItemChanged: {
@@ -151,6 +153,7 @@ ApplicationWindow {
             focus: true
 
             StackView.onActivating: forceActiveFocus()
+            Component.onCompleted: forceActiveFocus()
 
             Keys.onPressed: function (event) {
                 switch (event.key) {
@@ -383,7 +386,10 @@ ApplicationWindow {
                     break;
                 case Qt.Key_Return:
                 case Qt.Key_Enter:
-                    mainWindow.currentTime = "30s";
+                    if (mainWindow.currentTime === "" || mainWindow.currentTime === "-") {
+                        mainWindow.currentTime = "30s";
+                    }
+                    // Else use whatever was last set
                     stackView.push(modeMenuComponent);
                     event.accepted = true;
                     break;
@@ -470,7 +476,7 @@ ApplicationWindow {
                     Text {
                         Layout.fillWidth: true
                         Layout.topMargin: 15
-                        text: "[Enter] Use Default (30s)"
+                        text: "[Enter] Use Default (" + ((mainWindow.currentTime === "" || mainWindow.currentTime === "-") ? "30s" : mainWindow.currentTime) + ")"
                         color: Theme.accentGreen
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSizeM
@@ -883,16 +889,28 @@ ApplicationWindow {
                 mainWindow.lastErrors = errors;
                 mainWindow.lastTimeElapsed = timeElapsed;
 
+                // For Programmer Mode, use originalLanguage for progress/history
+                var langForProgress = mainWindow.currentLanguage;
+                if (mainWindow.currentDifficulty === "programmer" && mainWindow.originalLanguage !== "") {
+                    langForProgress = mainWindow.originalLanguage;
+                }
+
                 // Save to history via GameBackend
-                GameBackend.saveGameResult(wpm, accuracy, errors, mainWindow.currentTargetWPM, mainWindow.currentDifficulty, mainWindow.currentLanguage, mainWindow.currentMode);
+                GameBackend.saveGameResult(wpm, accuracy, errors, mainWindow.currentTargetWPM, mainWindow.currentDifficulty, langForProgress, mainWindow.currentMode);
 
                 // For Campaign mode, check if user passed and unlock next level
                 if (mainWindow.currentMode === "Campaign") {
-                    var passed = GameBackend.completeLevel(mainWindow.currentLanguage, mainWindow.currentDifficulty, wpm, accuracy);
+                    var passed = GameBackend.completeLevel(langForProgress, mainWindow.currentDifficulty, wpm, accuracy);
                     mainWindow.lastLevelPassed = passed;
                 } else {
                     // For manual mode, just check if target WPM was met
                     mainWindow.lastLevelPassed = (wpm >= mainWindow.currentTargetWPM);
+                }
+
+                // Restore language after Programmer Mode
+                if (mainWindow.currentDifficulty === "programmer" && mainWindow.originalLanguage !== "") {
+                    mainWindow.currentLanguage = mainWindow.originalLanguage;
+                    mainWindow.originalLanguage = "";
                 }
 
                 stackView.push(resultsComponent);
@@ -903,6 +921,11 @@ ApplicationWindow {
             }
 
             onExitClicked: {
+                // Restore language if exiting from Programmer Mode
+                if (mainWindow.currentDifficulty === "programmer" && mainWindow.originalLanguage !== "") {
+                    mainWindow.currentLanguage = mainWindow.originalLanguage;
+                    mainWindow.originalLanguage = "";
+                }
                 stackView.pop();
             }
         }
@@ -929,6 +952,33 @@ ApplicationWindow {
             Keys.onPressed: function (event) {
                 switch (event.key) {
                 case Qt.Key_1:
+                    mainWindow.currentDifficulty = "easy";
+                    mainWindow.currentTargetWPM = 40;
+                    stackView.push(gameplayComponent);
+                    event.accepted = true;
+                    break;
+                case Qt.Key_2:
+                    if (GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "medium")) {
+                        mainWindow.currentDifficulty = "medium";
+                        mainWindow.currentTargetWPM = 60;
+                        stackView.push(gameplayComponent);
+                    }
+                    event.accepted = true;
+                    break;
+                case Qt.Key_3:
+                    if (GameBackend.isLevelUnlocked(mainWindow.currentLanguage, "hard")) {
+                        mainWindow.currentDifficulty = "hard";
+                        mainWindow.currentTargetWPM = 70;
+                        stackView.push(gameplayComponent);
+                    }
+                    event.accepted = true;
+                    break;
+                case Qt.Key_4:
+                    // Programmer Mode: save original language and switch to prog
+                    mainWindow.originalLanguage = mainWindow.currentLanguage;
+                    mainWindow.currentLanguage = "prog";
+                    mainWindow.currentDifficulty = "programmer";
+                    mainWindow.currentTargetWPM = 50;
                     stackView.push(gameplayComponent);
                     event.accepted = true;
                     break;
@@ -976,66 +1026,68 @@ ApplicationWindow {
                         Layout.preferredHeight: 70
                         visible: (refreshTrigger, GameBackend.isLevelCompleted(mainWindow.currentLanguage, "hard"))
 
-                        // Premium gradient background
-                        gradient: Gradient {
-                            GradientStop {
-                                position: 0.0
-                                color: "#0d2818"
-                            }
-                            GradientStop {
-                                position: 0.5
-                                color: "#1a4730"
-                            }
-                            GradientStop {
-                                position: 1.0
-                                color: "#0d2818"
-                            }
-                        }
-                        border.width: 2
+                        // Simple background matching blueprint design
+                        color: Qt.rgba(0.247, 0.725, 0.314, 0.08)  // rgba(63, 185, 80, 0.08)
+                        border.width: 1
                         border.color: Theme.accentGreen
-                        radius: 12
 
-                        // Subtle inner glow
+                        // Left accent border (3px)
                         Rectangle {
-                            anchors.fill: parent
-                            anchors.margins: 2
-                            radius: 10
-                            color: "transparent"
-                            border.width: 1
-                            border.color: Qt.rgba(0.2, 0.8, 0.4, 0.3)
+                            width: 3
+                            height: parent.height
+                            color: Theme.accentGreen
                         }
 
                         Row {
                             anchors.centerIn: parent
-                            spacing: 16
+                            spacing: 12
 
-                            // Left trophy with green color
-                            Item {
-                                width: 32
-                                height: 32
+                            Column {
                                 anchors.verticalCenter: parent.verticalCenter
+                                spacing: 4
 
-                                Image {
-                                    id: trophyLeft
-                                    source: "qrc:/qt/qml/rapid_texter/assets/icons/trophy.svg"
-                                    anchors.fill: parent
-                                    visible: false
-                                }
-                                ColorOverlay {
-                                    anchors.fill: trophyLeft
-                                    source: trophyLeft
+                                Text {
+                                    text: "CONGRATULATIONS!"
                                     color: Theme.accentGreen
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSizeDisplayM  // Increased size
+                                    font.bold: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    width: parent.width
                                 }
-                            }
 
-                            Text {
-                                text: "CONGRATULATIONS! All levels completed!"
-                                color: Theme.accentGreen
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSizeL
-                                font.bold: true
-                                font.letterSpacing: 1
-                                anchors.verticalCenter: parent.verticalCenter
+                                Row {
+                                    spacing: Theme.spacingM
+                                    anchors.horizontalCenter: parent.horizontalCenter
+
+                                    // Trophy icon aligned with subtitle
+                                    Item {
+                                        width: 20
+                                        height: 20
+                                        anchors.verticalCenter: parent.verticalCenter
+
+                                        Image {
+                                            id: trophyIcon
+                                            source: "qrc:/qt/qml/rapid_texter/assets/icons/trophy.svg"
+                                            anchors.fill: parent
+                                            visible: false
+                                        }
+                                        ColorOverlay {
+                                            anchors.fill: trophyIcon
+                                            source: trophyIcon
+                                            color: Theme.accentGreen
+                                        }
+                                    }
+
+                                    Text {
+                                        text: "You have completed all levels!"
+                                        color: Theme.textSecondary
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.fontSizeM
+                                        horizontalAlignment: Text.AlignHCenter
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                }
                             }
                         }
                     }
@@ -1100,6 +1152,9 @@ ApplicationWindow {
                             statusType: "certified"
                             reqText: "50 WPM, 90% for Cert"
                             onClicked: {
+                                // Programmer Mode: save original language and switch to prog
+                                mainWindow.originalLanguage = mainWindow.currentLanguage;
+                                mainWindow.currentLanguage = "prog";
                                 mainWindow.currentDifficulty = "programmer";
                                 mainWindow.currentTargetWPM = 50;
                                 stackView.push(gameplayComponent);
@@ -1161,10 +1216,6 @@ ApplicationWindow {
                     break;
                 case Qt.Key_H:
                     stackView.push(historyComponent);
-                    event.accepted = true;
-                    break;
-                case Qt.Key_Escape:
-                    returnToSetup();
                     event.accepted = true;
                     break;
                 }
@@ -2164,12 +2215,5 @@ ApplicationWindow {
                 }
             }
         }
-    }
-
-    // Global ESC shortcut
-    Shortcut {
-        sequence: "Escape"
-        onActivated: if (stackView.depth > 1)
-            stackView.pop()
     }
 }
