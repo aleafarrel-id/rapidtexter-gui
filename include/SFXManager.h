@@ -93,11 +93,20 @@ private:
   static std::atomic<bool> buffersLoaded;
   static std::atomic<bool> isLoading;
 
-  /// Audio output devices pool
+  /// Pre-parsed WAV format untuk zero-overhead playback
+  static WAVEFORMATEX trueFormat;
+  static WAVEFORMATEX falseFormat;
+  static const char* trueAudioData;   ///< Pointer ke audio data dalam trueWavData
+  static const char* falseAudioData;  ///< Pointer ke audio data dalam falseWavData
+  static DWORD trueAudioSize;
+  static DWORD falseAudioSize;
+
+  /// Audio output devices pool (pre-initialized)
   static std::array<HWAVEOUT, AUDIO_POOL_SIZE> waveOutHandles;
   static std::array<WAVEHDR, AUDIO_POOL_SIZE> waveHeaders;
   static std::array<std::atomic<bool>, AUDIO_POOL_SIZE> channelBusy;
   static std::atomic<int> nextChannel;
+  static std::atomic<bool> handlesInitialized;  ///< Flag: handles sudah dibuka
 
   /**
    * @brief Load WAV file ke memory buffer
@@ -105,7 +114,25 @@ private:
   static bool loadWavFile(const char *filename, std::vector<char> &buffer);
 
   /**
-   * @brief Play audio dari buffer menggunakan available channel dari pool
+   * @brief Parse WAV header dan ekstrak format + audio data pointer
+   */
+  static bool parseWavHeader(const std::vector<char> &wavData,
+                             WAVEFORMATEX &format, const char*& audioData, DWORD &audioSize);
+
+  /**
+   * @brief Pre-initialize semua waveOut handles (dipanggil sekali di preload)
+   */
+  static void initializeHandles(const WAVEFORMATEX &format);
+
+  /**
+   * @brief Play audio dari buffer menggunakan available channel dari pool (optimized)
+   * @param audioData Pointer ke audio data
+   * @param audioSize Ukuran audio data dalam bytes
+   */
+  static void playFromPoolFast(const char* audioData, DWORD audioSize);
+
+  /**
+   * @brief Play audio dari buffer menggunakan available channel dari pool (legacy)
    */
   static void playFromPool(const std::vector<char> &wavData);
 

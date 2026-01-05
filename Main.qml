@@ -36,6 +36,7 @@ ApplicationWindow {
     property string originalLanguage: ""        // Stores original language for Programmer Mode restoration
     property bool sfxEnabled: GameBackend.sfxEnabled
     property bool isInGameplay: false            // Track if in gameplay for shortcut control
+    property bool skipNavigationSound: false      // Flag to skip sound during multi-pop transition
 
     property int currentDuration: {
         if (currentTime === "∞")
@@ -111,7 +112,11 @@ ApplicationWindow {
 
             onCurrentItemChanged: {
                 // Play navigation sound when page changes
-                GameBackend.playCorrectSound();
+                // Skip sound if in multi-pop transition (e.g., returning from results)
+                if (!mainWindow.skipNavigationSound) {
+                    GameBackend.playCorrectSound();
+                }
+                mainWindow.skipNavigationSound = false;  // Reset flag
 
                 // Reset status bar when returning to main menu
                 if (stackView.depth === 1) {
@@ -119,13 +124,14 @@ ApplicationWindow {
                 }
             }
 
+            // Smooth page transitions for polished UI/UX
             pushEnter: Transition {
                 PropertyAnimation {
                     property: "opacity"
                     from: 0
                     to: 1
-                    duration: 100
-                    easing.type: Easing.OutCubic
+                    duration: 200
+                    easing.type: Easing.OutQuart
                 }
             }
             pushExit: Transition {
@@ -133,7 +139,8 @@ ApplicationWindow {
                     property: "opacity"
                     from: 1
                     to: 0
-                    duration: 80
+                    duration: 150
+                    easing.type: Easing.InQuart
                 }
             }
             popEnter: Transition {
@@ -141,8 +148,8 @@ ApplicationWindow {
                     property: "opacity"
                     from: 0
                     to: 1
-                    duration: 100
-                    easing.type: Easing.OutCubic
+                    duration: 200
+                    easing.type: Easing.OutQuart
                 }
             }
             popExit: Transition {
@@ -150,7 +157,8 @@ ApplicationWindow {
                     property: "opacity"
                     from: 1
                     to: 0
-                    duration: 80
+                    duration: 150
+                    easing.type: Easing.InQuart
                 }
             }
         }
@@ -771,7 +779,7 @@ ApplicationWindow {
                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                     // Save WPM and difficulty to mainWindow before starting game
                     mainWindow.currentTargetWPM = parseInt(wpmInput.text) || 60;
-                    mainWindow.currentDifficulty = "easy";  // Manual mode uses easy difficulty
+                    mainWindow.currentDifficulty = "medium";  // Manual mode uses medium difficulty
                     stackView.push(gameplayComponent);
                     event.accepted = true;
                 } else if (event.key === Qt.Key_Escape) {
@@ -882,7 +890,7 @@ ApplicationWindow {
                             onClicked: {
                                 // Save WPM and difficulty to mainWindow before starting game
                                 mainWindow.currentTargetWPM = parseInt(wpmInput.text) || 60;
-                                mainWindow.currentDifficulty = "easy";
+                                mainWindow.currentDifficulty = "medium";
                                 stackView.push(gameplayComponent);
                             }
                         }
@@ -899,14 +907,20 @@ ApplicationWindow {
         id: gameplayComponent
 
         GameplayPage {
+            id: gameplayPageInstance
+
             // Set isInGameplay when entering gameplay
             StackView.onActivating: mainWindow.isInGameplay = true
             StackView.onDeactivating: mainWindow.isInGameplay = false
 
             // Get text from word bank using GameBackend
             // Convert language and difficulty to lowercase for backend
-            targetText: GameBackend.getRandomText(mainWindow.currentLanguage.toLowerCase(), mainWindow.currentDifficulty.toLowerCase(), 30  // Word count
-            )
+            // Initial text set via Component.onCompleted
+            Component.onCompleted: {
+                targetText = GameBackend.getRandomText(mainWindow.currentLanguage.toLowerCase(), mainWindow.currentDifficulty.toLowerCase(), 30  // Word count
+                );
+            }
+
             timeLimit: mainWindow.currentDuration
             timeRemaining: mainWindow.currentDuration
 
@@ -945,7 +959,10 @@ ApplicationWindow {
             }
 
             onResetClicked: {
-                // Reset is handled internally by GameplayPage
+                // CRITICAL FIX: Fetch NEW random text on reset!
+                // This ensures pressing Tab generates different words
+                gameplayPageInstance.targetText = GameBackend.getRandomText(mainWindow.currentLanguage.toLowerCase(), mainWindow.currentDifficulty.toLowerCase(), 30  // Word count
+                );
             }
 
             onExitClicked: {
@@ -1228,11 +1245,13 @@ ApplicationWindow {
 
             StackView.onActivating: forceActiveFocus()
 
-            // Function to return to setup page (skip gameplay)
+            // Function to return to setup page (skip gameplay completely)
             function returnToSetup() {
-                // Pop twice: results -> gameplay -> back to setup page (Campaign or Manual setup)
-                stackView.pop();  // Pop results page
-                stackView.pop();  // Pop gameplay page - now at setup (campaign menu or manual setup)
+                // Use popToIndex to directly navigate to setup page
+                // Stack: [...] -> Setup (depth-3) -> Gameplay (depth-2) -> Results (depth-1)
+                // popToIndex pops down TO (but not including) the specified index
+                // So popToIndex(depth-3) leaves us at the setup page
+                stackView.popToIndex(stackView.depth - 3);
             }
 
             Keys.onPressed: function (event) {

@@ -331,7 +331,7 @@ FocusScope {
             anchors.fill: parent
             spacing: 0
 
-            // Timer and CAPS LOCK warning row
+            // Timer Display Row
             RowLayout {
                 Layout.fillWidth: true
                 Layout.bottomMargin: 10
@@ -347,51 +347,22 @@ FocusScope {
                     font.weight: Font.DemiBold
                 }
 
-                // CAPS LOCK Warning (matches original TUI)
-                Rectangle {
-                    visible: capsLockOn
-                    color: "#3D2800"
-                    border.color: Theme.accentYellow
-                    border.width: 1
-                    radius: 4
-                    width: capsLockText.implicitWidth + 20
-                    height: capsLockText.implicitHeight + 8
-
-                    Text {
-                        id: capsLockText
-                        anchors.centerIn: parent
-                        text: "CAPS LOCK ON"
-                        color: Theme.accentYellow
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeM
-                        font.bold: true
-                    }
-                }
-
                 Item {
                     Layout.fillWidth: true
                 }  // Spacer
             }
 
-            // Text Display
+            // Text Display (borderless for clean monkeytype-like look)
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: textFlow.implicitHeight + 96
                 color: "transparent"
-                border.width: 1
-                border.color: Theme.borderPrimary
-
-                Rectangle {
-                    width: 3
-                    height: parent.height
-                    color: Theme.borderSecondary
-                }
 
                 Flow {
                     id: textFlow
                     anchors.fill: parent
                     anchors.margins: 48
-                    spacing: 12 // Space between words
+                    spacing: 0 // No horizontal gap, spaces are explicit
 
                     Repeater {
                         model: gameplayPage.wordInfo.length
@@ -400,9 +371,12 @@ FocusScope {
                         Row {
                             id: wordRow
                             spacing: 0
+                            height: 48 // Font 28 + 20px vertical gap
 
                             property int wordIndex: index
                             property var wordData: gameplayPage.wordInfo[index]
+                            // Space position is right after the word ends
+                            property int spaceIndex: wordData.endIndex + 1
 
                             Repeater {
                                 model: wordData.word.length
@@ -468,64 +442,93 @@ FocusScope {
                                     }
                                 }
                             }
+
+                            // Space character after word (except for last word)
+                            // Shows actual typed char when incorrect for better UX
+                            Text {
+                                id: spaceText
+                                visible: wordRow.wordIndex < gameplayPage.wordInfo.length - 1
+
+                                property int globalIndex: wordRow.spaceIndex
+                                property string charState: gameplayPage.getCharState(globalIndex)
+                                // Get the actual character typed at this position
+                                property string typedChar: globalIndex < gameplayPage.typedChars.length ? gameplayPage.typedChars[globalIndex] : ""
+                                // Show the typed char if incorrect, otherwise show space
+                                property string displayChar: charState === "incorrect" && typedChar.length > 0 ? typedChar : " "
+
+                                text: displayChar
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 28
+                                font.letterSpacing: 0.5
+
+                                // Red color when incorrect
+                                color: charState === "incorrect" ? Theme.accentRed : Theme.textMuted
+
+                                // Background for incorrect space
+                                Rectangle {
+                                    visible: spaceText.charState === "incorrect"
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    height: 28 + 8
+                                    color: Qt.rgba(248 / 255, 81 / 255, 73 / 255, 0.15)
+                                    z: -1
+                                }
+
+                                // Caret cursor at space position
+                                Rectangle {
+                                    visible: spaceText.charState === "current"
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: -1
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 2
+                                    height: 28 + 6
+                                    color: Theme.accentBlue
+
+                                    SequentialAnimation on opacity {
+                                        running: spaceText.charState === "current" && !gameplayPage.gameStarted
+                                        loops: Animation.Infinite
+                                        NumberAnimation {
+                                            to: 0
+                                            duration: 500
+                                        }
+                                        NumberAnimation {
+                                            to: 1
+                                            duration: 500
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            // CAPS LOCK Warning using SVG
-            Rectangle {
+            // CAPS LOCK Warning - compact, centered, no animation
+            Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: capsLockOn ? 44 : 0
-                Layout.topMargin: capsLockOn ? 20 : 0
+                Layout.preferredHeight: capsLockOn ? capsLockBox.height + 16 : 0
+                Layout.topMargin: capsLockOn ? 12 : 0
                 visible: gameplayPage.capsLockOn
-                color: Theme.warningBg
-                border.width: 1
-                border.color: Theme.accentYellow
 
                 Rectangle {
-                    width: 3
-                    height: parent.height
-                    color: Theme.accentYellow
-                }
-
-                Row {
-                    anchors.centerIn: parent
-                    spacing: Theme.spacingS
-
-                    Item {
-                        width: 14
-                        height: 14
-                        anchors.verticalCenter: parent.verticalCenter
-
-                        Image {
-                            id: capsLockIcon
-                            source: "qrc:/qt/qml/rapid_texter/assets/icons/warning.svg"
-                            anchors.fill: parent
-                            sourceSize: Qt.size(14, 14)
-                            visible: false
-                        }
-
-                        ColorOverlay {
-                            anchors.fill: capsLockIcon
-                            source: capsLockIcon
-                            color: Theme.accentYellow
-                        }
-                    }
+                    id: capsLockBox
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    color: "#3D2800"
+                    border.color: Theme.accentYellow
+                    border.width: 1
+                    radius: 4
+                    width: capsLockContent.implicitWidth + 20
+                    height: capsLockContent.implicitHeight + 8
 
                     Text {
+                        id: capsLockContent
+                        anchors.centerIn: parent
                         text: "CAPS LOCK ON"
                         color: Theme.accentYellow
                         font.family: Theme.fontFamily
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSizeM
                         font.bold: true
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-
-                Behavior on Layout.preferredHeight {
-                    NumberAnimation {
-                        duration: 150
                     }
                 }
             }

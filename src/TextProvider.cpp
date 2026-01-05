@@ -101,19 +101,17 @@ namespace {
 /**
  * @brief Constructor - Inisialisasi random number generator
  * 
- * Melakukan seeding untuk std::rand() menggunakan waktu saat ini.
+ * Menggunakan std::random_device untuk proper seeding dari hardware RNG.
  * Ini memastikan kata-kata yang dipilih akan berbeda setiap kali
- * aplikasi dijalankan.
+ * fungsi getWords() dipanggil.
  * 
- * @note Menggunakan std::srand() untuk kompatibilitas dengan std::rand()
- *       yang digunakan di getWords(). Untuk aplikasi yang membutuhkan
- *       randomness berkualitas tinggi, pertimbangkan menggunakan
- *       <random> library dengan proper seeding.
+ * @note Menggunakan std::mt19937 dengan seeding dari std::random_device
+ *       untuk randomness berkualitas tinggi. random_device menyediakan
+ *       entropy dari hardware (jika tersedia) atau OS random pool.
  */
-TextProvider::TextProvider() {
-    // Seed random number generator saat inisialisasi
-    // time(nullptr) mengembalikan Unix timestamp saat ini
-    std::srand(std::time(nullptr));
+TextProvider::TextProvider() : rng(std::random_device{}()) {
+    // Mersenne Twister sudah di-seed di initializer list
+    // dengan random_device untuk entropy berkualitas tinggi
 }
 
 // ============================================================================
@@ -271,11 +269,16 @@ std::vector<std::string> TextProvider::getWords(const std::string& language, Dif
     // Jika tidak ada kata yang memenuhi kriteria, return kosong
     if (filtered.empty()) return result;
 
-    // Pilih kata secara acak dari hasil filter
-    // Menggunakan modulo untuk mendapatkan index acak
-    // Kata yang sama bisa terpilih berkali-kali (sampling with replacement)
-    for (int i = 0; i < count; ++i) {
-        result.push_back(filtered[std::rand() % filtered.size()]);
+    // IMPROVED RANDOMIZATION:
+    // Shuffle seluruh filtered list, lalu ambil N pertama.
+    // Ini memastikan kata-kata tidak berulang dalam satu sesi
+    // dan menghasilkan variasi yang lebih baik pada setiap restart.
+    std::shuffle(filtered.begin(), filtered.end(), rng);
+    
+    // Ambil kata sebanyak count (atau semua jika filtered.size() < count)
+    int numWords = std::min(count, static_cast<int>(filtered.size()));
+    for (int i = 0; i < numWords; ++i) {
+        result.push_back(filtered[i]);
     }
 
     return result;

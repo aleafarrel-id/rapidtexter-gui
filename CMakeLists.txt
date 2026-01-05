@@ -31,10 +31,14 @@ set(GAME_LOGIC_HEADERS
     include/Stats.h
 )
 
+# Windows application icon
+set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/resources/app.rc")
+
 qt_add_executable(RapidTexterGUI
     main.cpp
     ${GAME_LOGIC_SOURCES}
     ${GAME_LOGIC_HEADERS}
+    ${APP_ICON_RESOURCE_WINDOWS}
 )
 
 # Add include directory for headers

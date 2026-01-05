@@ -39,6 +39,14 @@ std::vector<char> SFXManager::falseWavData;
 std::atomic<bool> SFXManager::buffersLoaded{false};
 std::atomic<bool> SFXManager::isLoading{false};
 
+// Pre-parsed audio data
+WAVEFORMATEX SFXManager::trueFormat = {};
+WAVEFORMATEX SFXManager::falseFormat = {};
+const char* SFXManager::trueAudioData = nullptr;
+const char* SFXManager::falseAudioData = nullptr;
+DWORD SFXManager::trueAudioSize = 0;
+DWORD SFXManager::falseAudioSize = 0;
+
 // Audio pool
 std::array<HWAVEOUT, SFXManager::AUDIO_POOL_SIZE> SFXManager::waveOutHandles =
     {};
@@ -46,6 +54,7 @@ std::array<WAVEHDR, SFXManager::AUDIO_POOL_SIZE> SFXManager::waveHeaders = {};
 std::array<std::atomic<bool>, SFXManager::AUDIO_POOL_SIZE>
     SFXManager::channelBusy = {};
 std::atomic<int> SFXManager::nextChannel{0};
+std::atomic<bool> SFXManager::handlesInitialized{false};
 
 #else
 // Linux: SDL2_mixer
@@ -104,6 +113,152 @@ bool SFXManager::loadWavFile(const char *filename, std::vector<char> &buffer) {
   }
 
   return true;
+}
+
+/**
+ * @brief Parse WAV header dan ekstrak format + audio data pointer
+ *
+ * Mengurai struktur WAV file dan mengekstrak:
+ * - WAVEFORMATEX untuk konfigurasi audio device
+ * - Pointer ke audio data dalam buffer
+ * - Ukuran audio data
+ */
+bool SFXManager::parseWavHeader(const std::vector<char> &wavData,
+                                WAVEFORMATEX &format, const char*& audioData, 
+                                DWORD &audioSize) {
+  if (wavData.size() < 44) return false; // Minimum WAV header size
+  
+  const char *data = wavData.data();
+  
+  // Verify RIFF header
+  if (memcmp(data, "RIFF", 4) != 0 || memcmp(data + 8, "WAVE", 4) != 0) {
+    return false;
+  }
+  
+  // Find fmt and data chunks
+  int pos = 12;
+  bool fmtFound = false;
+  bool dataFound = false;
+  
+  while (pos < static_cast<int>(wavData.size()) - 8) {
+    char chunkId[5] = {0};
+    memcpy(chunkId, data + pos, 4);
+    DWORD chunkSize = *reinterpret_cast<const DWORD *>(data + pos + 4);
+    
+    if (memcmp(chunkId, "fmt ", 4) == 0) {
+      format.wFormatTag = *reinterpret_cast<const WORD *>(data + pos + 8);
+      format.nChannels = *reinterpret_cast<const WORD *>(data + pos + 10);
+      format.nSamplesPerSec = *reinterpret_cast<const DWORD *>(data + pos + 12);
+      format.nAvgBytesPerSec = *reinterpret_cast<const DWORD *>(data + pos + 16);
+      format.nBlockAlign = *reinterpret_cast<const WORD *>(data + pos + 20);
+      format.wBitsPerSample = *reinterpret_cast<const WORD *>(data + pos + 22);
+      format.cbSize = 0;
+      fmtFound = true;
+    } else if (memcmp(chunkId, "data", 4) == 0) {
+      audioData = data + pos + 8;
+      audioSize = chunkSize;
+      dataFound = true;
+      break;
+    }
+    
+    pos += 8 + chunkSize;
+    if (chunkSize % 2 == 1) pos++; // Padding
+  }
+  
+  return fmtFound && dataFound && audioData != nullptr && audioSize > 0;
+}
+
+/**
+ * @brief Pre-initialize semua waveOut handles
+ *
+ * Membuka semua audio handles sekali saja saat preload.
+ * Ini menghilangkan overhead waveOutOpen() dari hot path.
+ */
+void SFXManager::initializeHandles(const WAVEFORMATEX &format) {
+  if (handlesInitialized.load(std::memory_order_acquire)) {
+    return;
+  }
+  
+  for (int i = 0; i < AUDIO_POOL_SIZE; i++) {
+    channelBusy[i].store(false, std::memory_order_relaxed);
+    waveOutHandles[i] = nullptr;
+    
+    // Open each handle with the audio format
+    MMRESULT result = waveOutOpen(
+        &waveOutHandles[i], WAVE_MAPPER, &format,
+        reinterpret_cast<DWORD_PTR>(waveOutCallback),
+        static_cast<DWORD_PTR>(i), CALLBACK_FUNCTION);
+    
+    if (result != MMSYSERR_NOERROR) {
+      waveOutHandles[i] = nullptr;
+    }
+  }
+  
+  nextChannel.store(0, std::memory_order_relaxed);
+  handlesInitialized.store(true, std::memory_order_release);
+}
+
+/**
+ * @brief Play audio menggunakan pre-initialized handles (zero-latency)
+ *
+ * Fungsi ini tidak membuka/menutup device - hanya write ke handle yang sudah ada.
+ * Jika channel busy, langsung skip (no blocking).
+ */
+void SFXManager::playFromPoolFast(const char* audioData, DWORD audioSize) {
+  if (!audioData || audioSize == 0) return;
+  if (!handlesInitialized.load(std::memory_order_acquire)) return;
+  
+  // Find available channel (round-robin with busy check)
+  int startChannel = nextChannel.load(std::memory_order_relaxed);
+  int channel = startChannel;
+  bool found = false;
+  
+  for (int i = 0; i < AUDIO_POOL_SIZE; i++) {
+    if (!channelBusy[channel].load(std::memory_order_acquire)) {
+      found = true;
+      break;
+    }
+    channel = (channel + 1) % AUDIO_POOL_SIZE;
+  }
+  
+  if (!found) {
+    // Semua channel busy - skip audio ini (lebih baik daripada lag)
+    return;
+  }
+  
+  // Handle tidak ada (gagal init)
+  if (!waveOutHandles[channel]) {
+    return;
+  }
+  
+  // Update next channel untuk round-robin
+  nextChannel.store((channel + 1) % AUDIO_POOL_SIZE, std::memory_order_relaxed);
+  
+  // Mark channel as busy
+  channelBusy[channel].store(true, std::memory_order_release);
+  
+  // Prepare header
+  ZeroMemory(&waveHeaders[channel], sizeof(WAVEHDR));
+  waveHeaders[channel].lpData = const_cast<LPSTR>(audioData);
+  waveHeaders[channel].dwBufferLength = audioSize;
+  waveHeaders[channel].dwFlags = 0;
+  
+  MMRESULT result = waveOutPrepareHeader(waveOutHandles[channel], 
+                                          &waveHeaders[channel],
+                                          sizeof(WAVEHDR));
+  if (result != MMSYSERR_NOERROR) {
+    channelBusy[channel].store(false, std::memory_order_release);
+    return;
+  }
+  
+  // Play!
+  result = waveOutWrite(waveOutHandles[channel], &waveHeaders[channel],
+                        sizeof(WAVEHDR));
+  if (result != MMSYSERR_NOERROR) {
+    waveOutUnprepareHeader(waveOutHandles[channel], &waveHeaders[channel],
+                           sizeof(WAVEHDR));
+    channelBusy[channel].store(false, std::memory_order_release);
+  }
 }
 
 /**
@@ -275,8 +430,11 @@ void SFXManager::playTrue() {
     return;
 
 #ifdef _WIN32
-  if (buffersLoaded.load(std::memory_order_acquire) && !trueWavData.empty()) {
-    playFromPool(trueWavData);
+  // Use fast path with pre-parsed audio data and pre-initialized handles
+  if (buffersLoaded.load(std::memory_order_acquire) && 
+      handlesInitialized.load(std::memory_order_acquire) &&
+      trueAudioData && trueAudioSize > 0) {
+    playFromPoolFast(trueAudioData, trueAudioSize);
   }
 #else
   if (buffersLoaded.load(std::memory_order_acquire) && trueChunk) {
@@ -290,8 +448,11 @@ void SFXManager::playFalse() {
     return;
 
 #ifdef _WIN32
-  if (buffersLoaded.load(std::memory_order_acquire) && !falseWavData.empty()) {
-    playFromPool(falseWavData);
+  // Use fast path with pre-parsed audio data and pre-initialized handles
+  if (buffersLoaded.load(std::memory_order_acquire) && 
+      handlesInitialized.load(std::memory_order_acquire) &&
+      falseAudioData && falseAudioSize > 0) {
+    playFromPoolFast(falseAudioData, falseAudioSize);
   }
 #else
   if (buffersLoaded.load(std::memory_order_acquire) && falseChunk) {
@@ -349,10 +510,24 @@ void SFXManager::preload() {
     if (tLoaded && fLoaded) {
       trueWavData = std::move(tData);
       falseWavData = std::move(fData);
-      buffersLoaded.store(true, std::memory_order_release);
+      
+      // Parse WAV headers untuk pre-extract format dan audio data
+      bool trueParsed = parseWavHeader(trueWavData, trueFormat, 
+                                        trueAudioData, trueAudioSize);
+      bool falseParsed = parseWavHeader(falseWavData, falseFormat, 
+                                         falseAudioData, falseAudioSize);
+      
+      if (trueParsed && falseParsed) {
+        // Pre-initialize waveOut handles menggunakan format dari false sound
+        // (biasanya true dan false memiliki format yang sama)
+        initializeHandles(falseFormat);
+        
+        buffersLoaded.store(true, std::memory_order_release);
+      }
     }
     isLoading.store(false, std::memory_order_release);
   }).detach();
+
 
 #else
   // Linux: Initialize SDL and load audio chunks
@@ -386,6 +561,13 @@ void SFXManager::cleanup() {
       waveOutHandles[i] = nullptr;
     }
   }
+  handlesInitialized.store(false, std::memory_order_release);
+
+  // Clear pre-parsed data
+  trueAudioData = nullptr;
+  falseAudioData = nullptr;
+  trueAudioSize = 0;
+  falseAudioSize = 0;
 
   // Clear buffers
   trueWavData.clear();

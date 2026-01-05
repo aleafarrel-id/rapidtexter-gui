@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <random>
 
 /**
  * @enum Difficulty
@@ -78,6 +79,14 @@ private:
      * Value: Vector berisi semua kata dalam bahasa tersebut
      */
     std::map<std::string, std::vector<std::string>> wordBanks;
+    
+    /**
+     * @brief Mersenne Twister RNG untuk randomization yang lebih baik
+     * 
+     * Menggunakan std::mt19937 dengan proper seeding dari random_device.
+     * Ini menghasilkan sequence random yang berbeda setiap sesi.
+     */
+    mutable std::mt19937 rng;
     
     /**
      * @brief Validasi apakah kata cocok untuk difficulty tertentu

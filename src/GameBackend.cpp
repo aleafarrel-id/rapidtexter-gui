@@ -11,6 +11,7 @@
 #include <QDir>
 #include <QQmlEngine>
 #include <QJSEngine>
+#include <QTimer>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -27,6 +28,7 @@ GameBackend::GameBackend(QObject *parent)
     : QObject(parent)
     , m_correctSound(nullptr)
     , m_errorSound(nullptr)
+    , m_audioKeepAliveTimer(nullptr)
     , m_sfxEnabled(true)
     , m_defaultDuration(30)
 {
@@ -36,8 +38,14 @@ GameBackend::GameBackend(QObject *parent)
     // Initialize SFX
     initializeSfx();
     
-    // Start the error sound timer for rate limiting
+    // Start timers for rate limiting and audio keepalive
     m_errorSoundTimer.start();
+    m_lastSoundPlayedTimer.start();
+    
+    // Setup audio keepalive timer - prevent Windows audio device sleep
+    m_audioKeepAliveTimer = new QTimer(this);
+    connect(m_audioKeepAliveTimer, &QTimer::timeout, this, &GameBackend::onAudioKeepAlive);
+    m_audioKeepAliveTimer->start(AUDIO_KEEPALIVE_MS);
     
     // Load word banks
     QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
@@ -51,6 +59,10 @@ GameBackend::GameBackend(QObject *parent)
 
 GameBackend::~GameBackend()
 {
+    if (m_audioKeepAliveTimer) {
+        m_audioKeepAliveTimer->stop();
+        delete m_audioKeepAliveTimer;
+    }
     delete m_correctSound;
     delete m_errorSound;
 }
@@ -111,19 +123,62 @@ void GameBackend::initializeSfx()
     m_errorSound->setVolume(0.5);
 }
 
+// Reinitialize audio - recreate both QSoundEffect instances
+// Call this proactively to keep Windows audio device awake
+void GameBackend::reinitializeAudio()
+{
+    // Save current volumes
+    qreal correctVol = m_correctSound ? m_correctSound->volume() : 0.5;
+    qreal errorVol = m_errorSound ? m_errorSound->volume() : 0.5;
+    
+    // Delete old instances
+    delete m_correctSound;
+    delete m_errorSound;
+    
+    // Create new instances
+    m_correctSound = new QSoundEffect(this);
+    m_correctSound->setSource(QUrl("qrc:/qt/qml/rapid_texter/assets/sfx/true.wav"));
+    m_correctSound->setVolume(correctVol);
+    
+    m_errorSound = new QSoundEffect(this);
+    m_errorSound->setSource(QUrl("qrc:/qt/qml/rapid_texter/assets/sfx/false.wav"));
+    m_errorSound->setVolume(errorVol);
+}
+
+// Called periodically by timer to keep audio device awake
+void GameBackend::onAudioKeepAlive()
+{
+    // Only reinitialize if audio hasn't been used recently
+    // This prevents Windows audio device from going to sleep
+    if (m_lastSoundPlayedTimer.elapsed() >= AUDIO_KEEPALIVE_MS) {
+        reinitializeAudio();
+        m_lastSoundPlayedTimer.restart();
+    }
+}
+
 void GameBackend::playCorrectSound()
 {
     if (m_sfxEnabled && m_correctSound) {
-        m_correctSound->play();
+        if (m_correctSound->status() == QSoundEffect::Ready) {
+            m_correctSound->play();
+            m_lastSoundPlayedTimer.restart();  // Mark audio as active
+        } else if (m_correctSound->status() == QSoundEffect::Error) {
+            reinitializeAudio();
+        }
     }
 }
 
 void GameBackend::playErrorSound()
 {
     if (m_sfxEnabled && m_errorSound) {
-        // Rate limiting: prevent rapid fire audio crash
+        // Rate limiting
         if (m_errorSoundTimer.elapsed() >= SOUND_COOLDOWN_MS) {
-            m_errorSound->play();
+            if (m_errorSound->status() == QSoundEffect::Ready) {
+                m_errorSound->play();
+                m_lastSoundPlayedTimer.restart();  // Mark audio as active
+            } else if (m_errorSound->status() == QSoundEffect::Error) {
+                reinitializeAudio();
+            }
             m_errorSoundTimer.restart();
         }
     }

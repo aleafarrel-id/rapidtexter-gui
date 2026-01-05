@@ -28,6 +28,7 @@
 
 // Forward declare for SFX
 class QSoundEffect;
+class QTimer;
 
 /**
  * @class GameBackend
@@ -221,7 +222,10 @@ private:
     QSoundEffect* m_errorSound;
     bool m_sfxEnabled;
     QElapsedTimer m_errorSoundTimer;
-    static const int SOUND_COOLDOWN_MS = 50;  // Prevent rapid fire audio crash
+    QElapsedTimer m_lastSoundPlayedTimer;  // Track last time any sound was played
+    QTimer* m_audioKeepAliveTimer;  // Periodic timer to keep audio device awake
+    static const int SOUND_COOLDOWN_MS = 80;
+    static const int AUDIO_KEEPALIVE_MS = 3000;  // Reinitialize audio every 3 seconds of inactivity
 
     // Settings
     int m_defaultDuration;
@@ -230,6 +234,10 @@ private:
     Difficulty stringToDifficulty(const QString& diff);
     void initializeSfx();
     void loadSettings();
+    void reinitializeAudio();  // Reinitialize both sounds
+
+private slots:
+    void onAudioKeepAlive();  // Called by timer to keep audio device active
 };
 
 #endif // GAMEBACKEND_H
