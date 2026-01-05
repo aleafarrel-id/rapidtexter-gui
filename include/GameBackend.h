@@ -18,6 +18,7 @@
 #include <QVariantMap>
 #include <QQmlEngine>
 #include <QJSEngine>
+#include <QElapsedTimer>
 #include <memory>
 
 #include "TextProvider.h"
@@ -219,6 +220,8 @@ private:
     QSoundEffect* m_correctSound;
     QSoundEffect* m_errorSound;
     bool m_sfxEnabled;
+    QElapsedTimer m_errorSoundTimer;
+    static const int SOUND_COOLDOWN_MS = 50;  // Prevent rapid fire audio crash
 
     // Settings
     int m_defaultDuration;

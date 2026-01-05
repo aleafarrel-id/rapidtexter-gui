@@ -36,6 +36,9 @@ GameBackend::GameBackend(QObject *parent)
     // Initialize SFX
     initializeSfx();
     
+    // Start the error sound timer for rate limiting
+    m_errorSoundTimer.start();
+    
     // Load word banks
     QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir().mkpath(dataPath);
@@ -118,7 +121,11 @@ void GameBackend::playCorrectSound()
 void GameBackend::playErrorSound()
 {
     if (m_sfxEnabled && m_errorSound) {
-        m_errorSound->play();
+        // Rate limiting: prevent rapid fire audio crash
+        if (m_errorSoundTimer.elapsed() >= SOUND_COOLDOWN_MS) {
+            m_errorSound->play();
+            m_errorSoundTimer.restart();
+        }
     }
 }
 

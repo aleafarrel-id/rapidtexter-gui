@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import rapid_texter 1.0
 import "../components"
 
 Rectangle {
@@ -37,7 +38,7 @@ Rectangle {
             break;
         case Qt.Key_Return:
         case Qt.Key_Enter:
-            durationSelected("30s");
+            durationSelected(GameBackend.defaultDuration === -1 ? "Infinity" : GameBackend.defaultDuration + "s");
             event.accepted = true;
             break;
         case Qt.Key_Escape:
@@ -108,7 +109,7 @@ Rectangle {
             Text {
                 Layout.fillWidth: true
                 Layout.topMargin: 15
-                text: "[Enter] Use Default (30s)"
+                text: "[Enter] Use Default (" + (GameBackend.defaultDuration === -1 ? "∞" : GameBackend.defaultDuration + "s") + ")"
                 color: Theme.accentGreen
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeM
@@ -127,5 +128,3 @@ Rectangle {
         }
     }
 }
-
-

@@ -10,6 +10,7 @@ Rectangle {
     property string currentTime: "-"
     property string currentMode: "-"
     property bool sfxEnabled: true
+    property bool showShortcutHint: true  // Show [S] shortcut indicator
 
     signal sfxToggled
 
@@ -219,7 +220,7 @@ Rectangle {
                     }
                 }
                 Text {
-                    text: "SFX:"
+                    text: (statusBar.showShortcutHint ? "[S] " : "") + "SFX:"
                     color: Theme.accentBlue
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeM

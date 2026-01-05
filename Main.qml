@@ -35,13 +35,14 @@ ApplicationWindow {
     property int currentTargetWPM: 60          // Target WPM for manual mode
     property string originalLanguage: ""        // Stores original language for Programmer Mode restoration
     property bool sfxEnabled: GameBackend.sfxEnabled
+    property bool isInGameplay: false            // Track if in gameplay for shortcut control
 
     property int currentDuration: {
         if (currentTime === "∞")
             return -1;
         if (currentTime === "-" || currentTime === "Custom")
-            return 30;
-        return parseInt(currentTime) || 30;
+            return GameBackend.defaultDuration;
+        return parseInt(currentTime) || GameBackend.defaultDuration;
     }
 
     // Reset status bar to default values (Time persists)
@@ -63,6 +64,18 @@ ApplicationWindow {
     property real lastTimeElapsed: 0
     property bool lastLevelPassed: false
 
+    // Global SFX toggle shortcut (disabled during gameplay to avoid conflict)
+    Shortcut {
+        sequence: "S"
+        enabled: !mainWindow.isInGameplay
+        onActivated: {
+            GameBackend.toggleSfx();
+            if (GameBackend.sfxEnabled) {
+                GameBackend.playErrorSound();
+            }
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -76,6 +89,7 @@ ApplicationWindow {
             currentTime: mainWindow.currentTime
             currentMode: mainWindow.currentMode
             sfxEnabled: GameBackend.sfxEnabled
+            showShortcutHint: !mainWindow.isInGameplay
             onSfxToggled: {
                 GameBackend.toggleSfx();
                 // Play sound to confirm SFX is now ON
@@ -361,16 +375,19 @@ ApplicationWindow {
                 switch (event.key) {
                 case Qt.Key_1:
                     mainWindow.currentTime = "15s";
+                    GameBackend.defaultDuration = 15;
                     stackView.push(modeMenuComponent);
                     event.accepted = true;
                     break;
                 case Qt.Key_2:
                     mainWindow.currentTime = "30s";
+                    GameBackend.defaultDuration = 30;
                     stackView.push(modeMenuComponent);
                     event.accepted = true;
                     break;
                 case Qt.Key_3:
                     mainWindow.currentTime = "60s";
+                    GameBackend.defaultDuration = 60;
                     stackView.push(modeMenuComponent);
                     event.accepted = true;
                     break;
@@ -381,13 +398,14 @@ ApplicationWindow {
                     break;
                 case Qt.Key_5:
                     mainWindow.currentTime = "∞";
+                    GameBackend.defaultDuration = -1;
                     stackView.push(modeMenuComponent);
                     event.accepted = true;
                     break;
                 case Qt.Key_Return:
                 case Qt.Key_Enter:
                     if (mainWindow.currentTime === "" || mainWindow.currentTime === "-") {
-                        mainWindow.currentTime = "30s";
+                        mainWindow.currentTime = GameBackend.defaultDuration === -1 ? "∞" : GameBackend.defaultDuration + "s";
                     }
                     // Else use whatever was last set
                     stackView.push(modeMenuComponent);
@@ -431,6 +449,7 @@ ApplicationWindow {
                             labelText: "15 Seconds"
                             onClicked: {
                                 mainWindow.currentTime = "15s";
+                                GameBackend.defaultDuration = 15;
                                 stackView.push(modeMenuComponent);
                             }
                         }
@@ -440,6 +459,7 @@ ApplicationWindow {
                             labelText: "30 Seconds"
                             onClicked: {
                                 mainWindow.currentTime = "30s";
+                                GameBackend.defaultDuration = 30;
                                 stackView.push(modeMenuComponent);
                             }
                         }
@@ -449,6 +469,7 @@ ApplicationWindow {
                             labelText: "60 Seconds"
                             onClicked: {
                                 mainWindow.currentTime = "60s";
+                                GameBackend.defaultDuration = 60;
                                 stackView.push(modeMenuComponent);
                             }
                         }
@@ -467,7 +488,8 @@ ApplicationWindow {
                             iconSource: "qrc:/qt/qml/rapid_texter/assets/icons/infinity.svg"
                             labelText: "Infinity (No Limit)"
                             onClicked: {
-                                mainWindow.currentTime = "Infinity";
+                                mainWindow.currentTime = "∞";
+                                GameBackend.defaultDuration = -1;
                                 stackView.push(modeMenuComponent);
                             }
                         }
@@ -476,7 +498,7 @@ ApplicationWindow {
                     Text {
                         Layout.fillWidth: true
                         Layout.topMargin: 15
-                        text: "[Enter] Use Default (" + ((mainWindow.currentTime === "" || mainWindow.currentTime === "-") ? "30s" : mainWindow.currentTime) + ")"
+                        text: "[Enter] Use Default (" + (GameBackend.defaultDuration === -1 ? "∞" : GameBackend.defaultDuration + "s") + ")"
                         color: Theme.accentGreen
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSizeM
@@ -505,8 +527,8 @@ ApplicationWindow {
             color: Theme.bgPrimary
             focus: true
 
-            // Force focus on input when page becomes active
-            StackView.onActivating: {
+            // Force focus on input AFTER page transition completes
+            StackView.onActivated: {
                 customDurInput.forceActiveFocus();
             }
 
@@ -514,6 +536,7 @@ ApplicationWindow {
                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                     var seconds = parseInt(customDurInput.text) || 30;
                     mainWindow.currentTime = seconds + "s";
+                    GameBackend.defaultDuration = seconds;
                     stackView.push(modeMenuComponent);
                     event.accepted = true;
                 } else if (event.key === Qt.Key_Escape) {
@@ -624,6 +647,7 @@ ApplicationWindow {
                             onClicked: {
                                 var seconds = parseInt(customDurInput.text) || 30;
                                 mainWindow.currentTime = seconds + "s";
+                                GameBackend.defaultDuration = seconds;
                                 stackView.push(modeMenuComponent);
                             }
                         }
@@ -738,8 +762,8 @@ ApplicationWindow {
             focus: true
             property int targetWpm: 60
 
-            // Force focus on input when page becomes active
-            StackView.onActivating: {
+            // Force focus on input AFTER page transition completes
+            StackView.onActivated: {
                 wpmInput.forceActiveFocus();
             }
 
@@ -875,6 +899,10 @@ ApplicationWindow {
         id: gameplayComponent
 
         GameplayPage {
+            // Set isInGameplay when entering gameplay
+            StackView.onActivating: mainWindow.isInGameplay = true
+            StackView.onDeactivating: mainWindow.isInGameplay = false
+
             // Get text from word bank using GameBackend
             // Convert language and difficulty to lowercase for backend
             targetText: GameBackend.getRandomText(mainWindow.currentLanguage.toLowerCase(), mainWindow.currentDifficulty.toLowerCase(), 30  // Word count
