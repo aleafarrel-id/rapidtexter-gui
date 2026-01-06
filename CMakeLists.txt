@@ -59,6 +59,7 @@ qt_add_qml_module(RapidTexterGUI
         qml/components/MenuItemC.qml
         qml/components/NavBtn.qml
         qml/components/StatusBar.qml
+        qml/components/HistoryDetailOverlay.qml
         # Pages
         qml/pages/MainMenuPage.qml
         qml/pages/LanguageMenuPage.qml

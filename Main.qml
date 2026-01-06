@@ -1558,6 +1558,7 @@ ApplicationWindow {
         id: historyComponent
 
         Rectangle {
+            id: historyPageRoot
             color: Theme.bgPrimary
             focus: true
 
@@ -1580,6 +1581,10 @@ ApplicationWindow {
             property bool showModeDropdown: false
             property bool showLanguageDropdown: false
             property bool showDifficultyDropdown: false
+
+            // Detail overlay state
+            property bool showDetailOverlay: false
+            property var selectedRecord: null
 
             // Close all dropdowns
             function closeAllDropdowns() {
@@ -1648,6 +1653,15 @@ ApplicationWindow {
             }
 
             Keys.onPressed: function (event) {
+                // Close overlay first if open
+                if (showDetailOverlay) {
+                    if (event.key === Qt.Key_Escape) {
+                        showDetailOverlay = false;
+                        event.accepted = true;
+                    }
+                    return;
+                }
+
                 switch (event.key) {
                 case Qt.Key_Escape:
                     stackView.pop();
@@ -2254,6 +2268,11 @@ ApplicationWindow {
                                     id: histMouse
                                     anchors.fill: parent
                                     hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        selectedRecord = modelData;
+                                        showDetailOverlay = true;
+                                    }
                                 }
                             }
                         }
@@ -2621,6 +2640,16 @@ ApplicationWindow {
                             }
                         }
                     }
+                }
+            }
+
+            // History Detail Overlay
+            HistoryDetailOverlay {
+                showOverlay: showDetailOverlay
+                recordData: selectedRecord
+                onClose: {
+                    showDetailOverlay = false;
+                    historyPageRoot.forceActiveFocus();
                 }
             }
         }
