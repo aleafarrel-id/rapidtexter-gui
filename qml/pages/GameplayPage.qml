@@ -50,6 +50,11 @@ FocusScope {
     property int totalKeystrokes: 0  // Every keystroke (not backspace)
     property real startTime: 0  // Timestamp when game started
     property bool gameEnded: false  // Prevent double gameCompleted signals
+    property int elapsedTime: 0  // Elapsed time in seconds for infinity mode
+
+    // Per-position tracking to prevent double counting (MonkeyType standard)
+    property var correctPositions: ({})  // Track positions already counted as correct
+    property var errorPositions: ({})    // Track positions already counted as error
 
     // ========================================================================
     // SIGNALS
@@ -185,10 +190,24 @@ FocusScope {
 
             // Compare against position BEFORE the push (not the new cursorPosition)
             if (text === targetText.charAt(positionBeforePush)) {
-                correctChars++;
+                // Only count correct if this position hasn't been counted before
+                // Prevents double counting when: type correct → backspace → type correct again
+                if (!correctPositions[positionBeforePush]) {
+                    var newCorrectPositions = Object.assign({}, correctPositions);
+                    newCorrectPositions[positionBeforePush] = true;
+                    correctPositions = newCorrectPositions;
+                    correctChars++;
+                }
                 // No sound on correct keystroke (per user request)
             } else {
-                incorrectChars++;  // Errors - only increases, never decreases
+                // Only count error if this position hasn't had an error before
+                // Prevents double counting when: type wrong → backspace → type wrong again
+                if (!errorPositions[positionBeforePush]) {
+                    var newErrorPositions = Object.assign({}, errorPositions);
+                    newErrorPositions[positionBeforePush] = true;
+                    errorPositions = newErrorPositions;
+                    incorrectChars++;
+                }
                 GameBackend.playErrorSound();    // Play SFX for incorrect keystroke
             }
             // NOTE: cursorPosition++ removed - it's now computed from typedChars.length
@@ -207,10 +226,13 @@ FocusScope {
         correctChars = 0;
         incorrectChars = 0;
         totalKeystrokes = 0;
+        correctPositions = {};  // Reset per-position tracking
+        errorPositions = {};    // Reset per-position tracking
         gameStarted = false;
         gameEnded = false;  // Reset the flag
         startTime = 0;
         timeRemaining = timeLimit;
+        elapsedTime = 0;  // Reset elapsed time for infinity mode
     }
 
     // ========================================================================
@@ -308,6 +330,17 @@ FocusScope {
         }
     }
 
+    // Elapsed time timer: counts UP for infinity mode (when timeLimit <= 0)
+    Timer {
+        id: elapsedTimer
+        interval: 1000
+        running: gameplayPage.gameStarted && gameplayPage.timeLimit <= 0 && !gameplayPage.gameEnded
+        repeat: true
+        onTriggered: {
+            gameplayPage.elapsedTime++;
+        }
+    }
+
     // ========================================================================
     // UI LAYOUT
     // ========================================================================
@@ -337,11 +370,45 @@ FocusScope {
                 Layout.bottomMargin: 10
                 spacing: Theme.spacingL
 
-                // Timer Display
+                // Countdown mode: show remaining time (blue)
                 Text {
                     Layout.leftMargin: 48
-                    text: gameplayPage.timeRemaining >= 0 ? gameplayPage.timeRemaining : "∞"
+                    visible: gameplayPage.timeLimit > 0
+                    text: gameplayPage.timeRemaining
                     color: Theme.accentBlue
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 32
+                    font.weight: Font.DemiBold
+                }
+
+                // Infinity mode: show infinity icon when elapsedTime is 0
+                Item {
+                    Layout.leftMargin: 48
+                    visible: gameplayPage.timeLimit <= 0 && gameplayPage.elapsedTime === 0
+                    width: 32
+                    height: 32
+
+                    Image {
+                        id: infinityIcon
+                        source: "qrc:/qt/qml/rapid_texter/assets/icons/infinity.svg"
+                        anchors.fill: parent
+                        sourceSize: Qt.size(32, 32)
+                        visible: false
+                    }
+
+                    ColorOverlay {
+                        anchors.fill: infinityIcon
+                        source: infinityIcon
+                        color: Theme.accentGreen  // Green color for infinity mode
+                    }
+                }
+
+                // Infinity mode: show elapsed time when >= 1 (green)
+                Text {
+                    Layout.leftMargin: 48
+                    visible: gameplayPage.timeLimit <= 0 && gameplayPage.elapsedTime > 0
+                    text: gameplayPage.elapsedTime
+                    color: Theme.accentGreen  // Green color for infinity mode
                     font.family: Theme.fontFamily
                     font.pixelSize: 32
                     font.weight: Font.DemiBold

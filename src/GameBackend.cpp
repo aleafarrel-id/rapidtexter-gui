@@ -444,6 +444,11 @@ void GameBackend::resetProgress()
     emit progressUpdated();
 }
 
+bool GameBackend::wasHardCompletedBefore(const QString& language)
+{
+    return m_progressManager.wasHardCompletedBefore(language.toLower().toStdString());
+}
+
 // ============================================================================
 // SETTINGS INTERFACE
 // ============================================================================

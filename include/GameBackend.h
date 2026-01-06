@@ -198,6 +198,16 @@ public:
      */
     Q_INVOKABLE void resetProgress();
 
+    /**
+     * @brief Cek apakah Hard mode pernah completed sebelumnya
+     * @param language Bahasa (ID, EN)
+     * @return true jika Hard sudah pernah completed sebelumnya
+     * 
+     * Digunakan untuk menentukan apakah akan menampilkan Credits
+     * setelah Results saat pertama kali menyelesaikan Hard mode.
+     */
+    Q_INVOKABLE bool wasHardCompletedBefore(const QString& language);
+
     // ========================================================================
     // SETTINGS INTERFACE
     // ========================================================================

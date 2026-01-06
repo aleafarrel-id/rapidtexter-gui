@@ -64,6 +64,7 @@ ApplicationWindow {
     property int lastErrors: 0
     property real lastTimeElapsed: 0
     property bool lastLevelPassed: false
+    property bool isFirstTimeHardCompletion: false  // Tracks first-time hard completion for credits flow
 
     // Global SFX toggle shortcut (disabled during gameplay to avoid conflict)
     Shortcut {
@@ -940,13 +941,29 @@ ApplicationWindow {
                 // Save to history via GameBackend
                 GameBackend.saveGameResult(wpm, accuracy, errors, mainWindow.currentTargetWPM, mainWindow.currentDifficulty, langForProgress, mainWindow.currentMode);
 
+                // Check if this is a first-time hard completion BEFORE calling completeLevel
+                // (completeLevel will mark it as completed, so we need to check first)
+                var wasHardCompletedBefore = false;
+                if (mainWindow.currentMode === "Campaign" && mainWindow.currentDifficulty === "hard") {
+                    wasHardCompletedBefore = GameBackend.wasHardCompletedBefore(langForProgress);
+                }
+
                 // For Campaign mode, check if user passed and unlock next level
                 if (mainWindow.currentMode === "Campaign") {
                     var passed = GameBackend.completeLevel(langForProgress, mainWindow.currentDifficulty, wpm, accuracy);
                     mainWindow.lastLevelPassed = passed;
+
+                    // Set first-time hard completion flag for credits flow
+                    // Only triggers if: hard mode, passed requirements, and never completed hard before
+                    if (mainWindow.currentDifficulty === "hard" && passed && !wasHardCompletedBefore) {
+                        mainWindow.isFirstTimeHardCompletion = true;
+                    } else {
+                        mainWindow.isFirstTimeHardCompletion = false;
+                    }
                 } else {
                     // For manual mode, just check if target WPM was met
                     mainWindow.lastLevelPassed = (wpm >= mainWindow.currentTargetWPM);
+                    mainWindow.isFirstTimeHardCompletion = false;
                 }
 
                 // Restore language after Programmer Mode
@@ -1246,12 +1263,20 @@ ApplicationWindow {
             StackView.onActivating: forceActiveFocus()
 
             // Function to return to setup page (skip gameplay completely)
+            // OR redirect to credits for first-time hard completion
             function returnToSetup() {
-                // Use popToIndex to directly navigate to setup page
-                // Stack: [...] -> Setup (depth-3) -> Gameplay (depth-2) -> Results (depth-1)
-                // popToIndex pops down TO (but not including) the specified index
-                // So popToIndex(depth-3) leaves us at the setup page
-                stackView.popToIndex(stackView.depth - 3);
+                // Check if this is a first-time hard completion - redirect to credits
+                if (mainWindow.isFirstTimeHardCompletion) {
+                    // Replace results page with credits page (avoids double transition animation)
+                    // Stack after: [...] -> CampaignMenu (depth-4) -> Gameplay (depth-3) -> Credits (depth-2)
+                    stackView.replace(creditsComponent);
+                } else {
+                    // Normal flow: pop back to setup page
+                    // Stack: [...] -> Setup (depth-3) -> Gameplay (depth-2) -> Results (depth-1)
+                    // popToIndex pops down TO (but not including) the specified index
+                    // So popToIndex(depth-3) leaves us at the setup page
+                    stackView.popToIndex(stackView.depth - 3);
+                }
             }
 
             Keys.onPressed: function (event) {
@@ -2253,9 +2278,24 @@ ApplicationWindow {
             color: Theme.bgPrimary
             focus: true
 
+            // Function to return from credits - handles both normal and first-time hard completion cases
+            function returnFromCredits() {
+                if (mainWindow.isFirstTimeHardCompletion) {
+                    // First-time hard completion flow: Credits replaced Results
+                    // Stack: [...] -> CampaignMenu (depth-3) -> Gameplay (depth-2) -> Credits (depth-1)
+                    // Pop back to Campaign Menu
+                    stackView.popToIndex(stackView.depth - 3);
+                    // Reset the flag
+                    mainWindow.isFirstTimeHardCompletion = false;
+                } else {
+                    // Normal flow: just pop back to previous page
+                    stackView.pop();
+                }
+            }
+
             Keys.onPressed: function (event) {
                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Escape) {
-                    stackView.pop();
+                    returnFromCredits();
                     event.accepted = true;
                 }
             }
@@ -2344,7 +2384,7 @@ ApplicationWindow {
                         NavBtn {
                             iconSource: "qrc:/qt/qml/rapid_texter/assets/icons/arrow-left.svg"
                             labelText: "Return (ENTER)"
-                            onClicked: stackView.pop()
+                            onClicked: returnFromCredits()
                         }
                     }
                 }
