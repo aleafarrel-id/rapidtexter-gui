@@ -1,24 +1,61 @@
+/**
+ * @file StatusBar.qml
+ * @brief Application-wide status bar displaying game state and settings.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * The StatusBar component provides a persistent header showing the current
+ * game configuration (language, duration, mode) and provides quick access
+ * to toggle sound effects on/off.
+ *
+ * @section integration Integration
+ * Used in Main.qml as a fixed header above the StackView navigation.
+ * Reads properties from mainWindow: currentLanguage, currentTime, currentMode, sfxEnabled.
+ */
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 
+/**
+ * @brief Status bar component showing game configuration.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: statusBar
 
-    // Properties exposed to parent (bound to mainWindow properties)
+    /* ========================================================================
+     * PUBLIC PROPERTIES
+     * ======================================================================== */
+
+    /** @property currentLanguage @brief Currently selected language ("Indonesia", "English", "Prog"). */
     property string currentLanguage: "-"
+
+    /** @property currentTime @brief Selected game duration (e.g., "60s", "∞"). */
     property string currentTime: "-"
+
+    /** @property currentMode @brief Selected game mode ("Manual" or "Campaign"). */
     property string currentMode: "-"
+
+    /** @property sfxEnabled @brief Whether sound effects are enabled. */
     property bool sfxEnabled: true
+
+    /** @property showShortcutHint @brief Show [S] shortcut indicator for SFX toggle. */
     property bool showShortcutHint: true  // Show [S] shortcut indicator
 
+    /** @signal sfxToggled @brief Emitted when SFX toggle button is clicked. */
     signal sfxToggled
 
-    // Styling
+    /* ========================================================================
+     * STYLING
+     * ======================================================================== */
+
+    /** @brief Fixed height of 40px (Theme.statusBarHeight). */
     height: Theme.statusBarHeight
+
+    /** @brief Secondary background for elevation appearance. */
     color: Theme.bgSecondary
 
-    // Bottom border
+    /** @brief 1-pixel bottom border for visual separation. */
     Rectangle {
         anchors.bottom: parent.bottom
         width: parent.width

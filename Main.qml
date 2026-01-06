@@ -1,3 +1,38 @@
+/**
+ * @file Main.qml
+ * @brief Main application window for the RapidTexter GUI typing test application.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * This is the root application window that orchestrates all pages and navigation.
+ * Contains the StackView-based navigation system, status bar, and application state.
+ *
+ * @section dimensions Window Dimensions
+ * - Default: 1024x768 pixels
+ * - Minimum: 800x600 pixels
+ *
+ * @section architecture Architecture
+ * Uses a StackView for page navigation with push/pop animations:
+ * - Push animation: 200ms slide from right
+ * - Pop animation: 150ms slide to right
+ *
+ * @section state Application State
+ * - currentLanguage: Selected language ("ID" or "EN")
+ * - currentTime: Display duration string ("15s", "30s", "60s", "∞")
+ * - currentMode: Game mode ("Manual" or "Campaign")
+ * - currentDifficulty: Campaign level ("easy", "medium", "hard", "programmer")
+ * - Campaign progress: easyPassed, mediumPassed, hardPassed, programmerCertified
+ *
+ * @section shortcuts Global Keyboard Shortcuts
+ * - Key_S: Toggle SFX (disabled during gameplay)
+ *
+ * @section pages Inline Page Components
+ * This file contains inline Component definitions for all pages to enable
+ * signal handling within the same file scope. Pages are:
+ * MainMenuPage, LanguageMenuPage, DurationMenuPage, ModeMenuPage,
+ * CampaignMenuPage, CustomDurationPage, ManualSetupPage, GameplayPage,
+ * ResultsPage, HistoryPage, CreditsPage, ResetHistoryPage, ResetProgressPage
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -5,6 +40,10 @@ import Qt5Compat.GraphicalEffects
 import "qml/components"
 import "qml/pages"
 
+/**
+ * @brief Main application window component.
+ * @inherits ApplicationWindow
+ */
 ApplicationWindow {
     id: mainWindow
 

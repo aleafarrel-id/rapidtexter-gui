@@ -1,18 +1,33 @@
+/**
+ * @file CreditsPage.qml
+ * @brief Application credits and developer attribution page.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Displays the development team credits with a thank-you message.
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_Return/Key_Enter/Key_Escape: Return to previous page
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import "../components"
 
+/**
+ * @brief Credits display page component.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: creditsPage
     color: Theme.bgPrimary
     focus: true
 
-    // Developer credits
+    /** @property developers @brief Array of developer names. */
     property var developers: ["Alea Farrel", "Hensa Katelu", "Yanuar Adi Candra", "Arif Wibowo P.", "Aria Mahendra U."]
 
-    // Navigation signal
+    /** @signal returnClicked @brief Emitted to return to previous page. */
     signal returnClicked
 
     Keys.onPressed: function (event) {
@@ -112,5 +127,3 @@ Rectangle {
         }
     }
 }
-
-

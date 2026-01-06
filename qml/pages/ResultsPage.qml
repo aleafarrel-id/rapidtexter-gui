@@ -1,23 +1,55 @@
+/**
+ * @file ResultsPage.qml
+ * @brief Game results display page showing performance metrics.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Displays typing test results including WPM, accuracy, time,
+ * and error count. Shows pass/fail status for campaign mode.
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_Return/Key_Enter: Continue
+ * - Key_H: View history
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 
+/**
+ * @brief Results display page component.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: resultsPage
     color: Theme.bgPrimary
     focus: true
 
-    // Results data properties
+    /* ========================================================================
+     * RESULTS DATA PROPERTIES
+     * ======================================================================== */
+
+    /** @property wpm @brief Words per minute achieved. */
     property int wpm: 84
+
+    /** @property accuracy @brief Typing accuracy percentage (0-100). */
     property int accuracy: 99
+
+    /** @property timeElapsed @brief Time taken to complete (e.g., "15.0s"). */
     property string timeElapsed: "15.0s"
+
+    /** @property errors @brief Number of typing errors. */
     property int errors: 1
+
+    /** @property passed @brief Whether the level requirements were met. */
     property bool passed: true
+
+    /** @property passMessage @brief Custom pass/fail message header. */
     property string passMessage: "LEVEL PASSED!"
+
+    /** @property passDescription @brief Custom pass/fail description text. */
     property string passDescription: "Great job! You've achieved the requirements."
 
-    // Navigation signals
     signal continueClicked
     signal historyClicked
 

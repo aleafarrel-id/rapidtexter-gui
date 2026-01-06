@@ -1,3 +1,21 @@
+/**
+ * @file GameplayPage.qml
+ * @brief Core typing game interface with real-time character tracking.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * The GameplayPage provides the main typing experience:
+ * - Real-time character-by-character input tracking
+ * - Visual feedback for correct/incorrect characters
+ * - Blinking cursor animation
+ * - Timer countdown
+ * - Backspace support with skip logic
+ * - CAPS LOCK warning
+ *
+ * @section architecture Architecture
+ * Uses a hidden TextInput for keyboard capture and a Flow/Repeater
+ * for character-level rendering with per-character styling.
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -5,28 +23,32 @@ import Qt5Compat.GraphicalEffects
 import rapid_texter
 import "../components"
 
+/**
+ * @brief Core gameplay page with typing mechanics.
+ * @inherits FocusScope
+ */
 FocusScope {
     id: gameplayPage
     focus: true
 
-    // Background
+    /** @brief Background rectangle for consistent theming. */
     Rectangle {
         anchors.fill: parent
         color: Theme.bgPrimary
         z: -100
     }
 
-    // ========================================================================
-    // PROPERTIES - Game State
-    // ========================================================================
+    /* ========================================================================
+     * PROPERTIES - Game State
+     * ======================================================================== */
 
-    // Target text to type (will be set by parent)
+    /** @property targetText @brief The text the user must type. */
     property string targetText: "darah salah tidak mulut ada di situ berbunyi melihat sekali"
 
-    // User's typed text - use list for better reactivity
+    /** @property typedChars @brief Array of typed characters for reactivity. */
     property var typedChars: []
 
-    // Computed property for backward compatibility
+    /** @property typedText @brief Joined string for backward compatibility. */
     property string typedText: typedChars.join("")
 
     // Current cursor position - ALWAYS equals typedChars.length to prevent desync

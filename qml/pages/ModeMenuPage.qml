@@ -1,15 +1,36 @@
+/**
+ * @file ModeMenuPage.qml
+ * @brief Game mode selection menu page.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Allows users to select the game mode:
+ * - Manual [1]: Free practice without progression
+ * - Campaign [2]: Progressive difficulty levels
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_1: Select Manual mode
+ * - Key_2: Select Campaign mode
+ * - Key_Escape: Go back
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 
+/**
+ * @brief Game mode selection page component.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: modeMenuPage
     color: Theme.bgPrimary
     focus: true
 
-    // Navigation signals
+    /** @signal modeSelected @brief Emitted with selected mode ("Manual" or "Campaign"). */
     signal modeSelected(string mode)
+
+    /** @signal backClicked @brief Emitted when user presses [ESC]. */
     signal backClicked
 
     Keys.onPressed: function (event) {

@@ -1,16 +1,44 @@
+/**
+ * @file MainMenuPage.qml
+ * @brief Main menu page with navigation options for the RapidTexter application.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Displays the application logo and main navigation options:
+ * - Start Game [1]: Begin a new typing game
+ * - Show History [2]: View past game results
+ * - Quit [Q]: Exit the application
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_1: Start game
+ * - Key_2: Show history
+ * - Key_Q: Quit application
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 
+/**
+ * @brief Main menu page component.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: mainMenuPage
     color: Theme.bgPrimary
     focus: true
 
-    // Navigation signals
+    /* ========================================================================
+     * NAVIGATION SIGNALS
+     * ======================================================================== */
+
+    /** @signal startGameClicked @brief Emitted when user presses [1] or clicks Start Game. */
     signal startGameClicked
+
+    /** @signal showHistoryClicked @brief Emitted when user presses [2] or clicks Show History. */
     signal showHistoryClicked
+
+    /** @signal quitClicked @brief Emitted when user presses [Q] or clicks Quit. */
     signal quitClicked
 
     Keys.onPressed: function (event) {
@@ -107,5 +135,3 @@ Rectangle {
         }
     }
 }
-
-

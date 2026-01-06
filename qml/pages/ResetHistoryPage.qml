@@ -1,16 +1,35 @@
+/**
+ * @file ResetHistoryPage.qml
+ * @brief Confirmation dialog for clearing game history.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Displays a warning confirmation before permanently deleting
+ * all game history entries. Action cannot be undone.
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_Return/Key_Enter: Confirm clear
+ * - Key_Escape: Cancel
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import "../components"
 
+/**
+ * @brief History reset confirmation page component.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: resetHistoryPage
     color: Theme.bgPrimary
     focus: true
 
-    // Navigation signals
+    /** @signal confirmClicked @brief Emitted when user confirms history clear. */
     signal confirmClicked
+
+    /** @signal cancelClicked @brief Emitted when user cancels. */
     signal cancelClicked
 
     Keys.onPressed: function (event) {
@@ -130,5 +149,3 @@ Rectangle {
         }
     }
 }
-
-

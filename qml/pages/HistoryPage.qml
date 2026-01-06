@@ -1,53 +1,36 @@
+/**
+ * @file HistoryPage.qml
+ * @brief Paginated game history display page.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Displays a paginated list of past game results with details
+ * including WPM, accuracy, difficulty, language, mode, and timestamps.
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_Escape: Go back
+ * - Key_C: Clear history
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import "../components"
 
+/**
+ * @brief Game history display page component.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: historyPage
     color: Theme.bgPrimary
     focus: true
 
-    // History data
-    property var historyData: [
-        {
-            wpm: 84.8,
-            acc: 99.1,
-            target: 40,
-            errors: 1,
-            difficulty: "Easy",
-            lang: "ID",
-            mode: "Campaign",
-            date: "03/01/2026 15:48",
-            passed: true
-        },
-        {
-            wpm: 70.0,
-            acc: 93.6,
-            target: 40,
-            errors: 12,
-            difficulty: "Easy",
-            lang: "ID",
-            mode: "Campaign",
-            date: "03/01/2026 14:58",
-            passed: true
-        },
-        {
-            wpm: 69.6,
-            acc: 93.0,
-            target: 70,
-            errors: 13,
-            difficulty: "Hard",
-            lang: "ID",
-            mode: "Campaign",
-            date: "02/01/2026 17:58",
-            passed: false
-        }
-    ]
+    /** @property historyData @brief Array of game history entries (populated from backend). */
+    property var historyData: []
     property int currentPage: 1
-    property int totalPages: 2
-    property int totalEntries: 7
+    property int totalPages: 1
+    property int totalEntries: 0
 
     // Navigation signals
     signal backClicked
@@ -334,5 +317,3 @@ Rectangle {
         }
     }
 }
-
-

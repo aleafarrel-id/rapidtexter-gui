@@ -1,23 +1,75 @@
+/**
+ * @file MenuItemC.qml
+ * @brief Rich menu item component with keyboard badges, icons, and status indicators.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * MenuItemC provides a consistent menu item appearance throughout the application,
+ * featuring keyboard shortcut badges, customizable icons, accent colors, and
+ * support for various status states (locked, passed, certified).
+ *
+ * @section variants Accent Types
+ * - "default": Blue accent for neutral items
+ * - "green": Green accent for success/passed items
+ * - "yellow": Yellow accent for warnings/custom options
+ * - "red": Red accent for danger/destructive items
+ *
+ * @section statuses Status Types
+ * - "passed": Green for completed levels
+ * - "locked": Gray for unavailable items
+ * - "certified": Blue for special achievements
+ */
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 
+/**
+ * @brief Interactive menu item with rich visual feedback.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: menuItem
 
-    // Public properties
+    /* ========================================================================
+     * PUBLIC PROPERTIES
+     * ======================================================================== */
+
+    /** @property keyText @brief Keyboard shortcut badge text (e.g., "[1]", "[ESC]"). */
     property string keyText: "[1]"
+
+    /** @property iconSource @brief Path to SVG icon (qrc:/ format), rendered at 18x18px. */
     property string iconSource: ""
+
+    /** @property labelText @brief Main menu item text label. */
     property string labelText: "Menu Item"
+
+    /** @property accentType @brief Color accent variant: "default", "green", "yellow", "red". */
     property string accentType: "default"  // "default", "green", "yellow", "red"
+
+    /** @property locked @brief Whether the menu item is disabled/locked. */
     property bool locked: false
+
+    /** @property statusText @brief Status badge text (e.g., "[PASSED]", "[LOCKED]"). */
     property string statusText: ""  // e.g. "[PASSED]", "[LOCKED]", "[AVAILABLE]"
+
+    /** @property statusType @brief Status badge type: "passed", "locked", "certified". */
     property string statusType: ""  // "passed", "locked", "certified"
+
+    /** @property reqText @brief Requirement description text (e.g., "Min: 40 WPM, 80% Acc"). */
     property string reqText: ""     // e.g. "Min: 40 WPM, 80% Acc"
 
+    /** @signal clicked @brief Emitted when the menu item is clicked (only if not locked). */
     signal clicked
 
-    // Computed properties
+    /* ========================================================================
+     * COMPUTED PROPERTIES
+     * ======================================================================== */
+
+    /**
+     * @property hoverColor
+     * @brief Computed accent color based on accentType and locked state.
+     * @readonly
+     */
     readonly property color hoverColor: {
         if (locked)
             return Theme.borderSecondary;
@@ -200,4 +252,3 @@ Rectangle {
             menuItem.clicked()
     }
 }
-

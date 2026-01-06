@@ -1,15 +1,34 @@
+/**
+ * @file CustomDurationPage.qml
+ * @brief Custom game duration input page.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Allows users to enter a custom duration (5-600 seconds).
+ * Features a text input with integer validation.
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_Return/Key_Enter: Confirm duration
+ * - Key_Escape: Go back
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 
+/**
+ * @brief Custom duration input page component.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: customDurationPage
     color: Theme.bgPrimary
     focus: true
 
-    // Navigation signals
+    /** @signal durationConfirmed @brief Emitted with custom duration string (e.g., "45s"). */
     signal durationConfirmed(string duration)
+
+    /** @signal backClicked @brief Emitted when user presses [ESC]. */
     signal backClicked
 
     Keys.onPressed: function (event) {
@@ -121,5 +140,3 @@ Rectangle {
         }
     }
 }
-
-

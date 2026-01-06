@@ -1,16 +1,35 @@
+/**
+ * @file ResetProgressPage.qml
+ * @brief Confirmation dialog for resetting campaign progress.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Displays a warning confirmation before resetting all campaign
+ * progress, which re-locks all difficulty levels. Action cannot be undone.
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_Return/Key_Enter: Confirm reset
+ * - Key_Escape: Cancel
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import "../components"
 
+/**
+ * @brief Progress reset confirmation page component.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: resetProgressPage
     color: Theme.bgPrimary
     focus: true
 
-    // Navigation signals
+    /** @signal confirmClicked @brief Emitted when user confirms progress reset. */
     signal confirmClicked
+
+    /** @signal cancelClicked @brief Emitted when user cancels. */
     signal cancelClicked
 
     Keys.onPressed: function (event) {
@@ -137,5 +156,3 @@ Rectangle {
         }
     }
 }
-
-

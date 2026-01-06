@@ -1,15 +1,36 @@
+/**
+ * @file LanguageMenuPage.qml
+ * @brief Language selection menu page.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Allows users to select the game language:
+ * - Indonesia [1]: Indonesian word sets
+ * - English [2]: English word sets
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_1: Select Indonesia
+ * - Key_2: Select English
+ * - Key_Escape: Go back
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 
+/**
+ * @brief Language selection page component.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: languageMenuPage
     color: Theme.bgPrimary
     focus: true
 
-    // Navigation signals
+    /** @signal languageSelected @brief Emitted with selected language code ("ID" or "EN"). */
     signal languageSelected(string lang)
+
+    /** @signal backClicked @brief Emitted when user presses [ESC]. */
     signal backClicked
 
     Keys.onPressed: function (event) {
@@ -80,5 +101,3 @@ Rectangle {
         }
     }
 }
-
-

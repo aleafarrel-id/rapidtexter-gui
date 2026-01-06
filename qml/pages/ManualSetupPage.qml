@@ -1,17 +1,37 @@
+/**
+ * @file ManualSetupPage.qml
+ * @brief Manual mode setup page for target WPM configuration.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Allows users to set a target WPM (1-200) for free practice mode.
+ * The target WPM is used to track if the user achieves their goal.
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_Return/Key_Enter: Start game with specified WPM
+ * - Key_Escape: Go back
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 
+/**
+ * @brief Manual mode setup page component.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: manualSetupPage
     color: Theme.bgPrimary
     focus: true
 
+    /** @property targetWpm @brief Default target WPM value. */
     property int targetWpm: 60
 
-    // Navigation signals
+    /** @signal startClicked @brief Emitted with target WPM to start the game. */
     signal startClicked(int wpm)
+
+    /** @signal backClicked @brief Emitted when user presses [ESC]. */
     signal backClicked
 
     Keys.onPressed: function (event) {
@@ -119,5 +139,3 @@ Rectangle {
         }
     }
 }
-
-

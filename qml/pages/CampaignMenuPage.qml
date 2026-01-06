@@ -1,23 +1,65 @@
+/**
+ * @file CampaignMenuPage.qml
+ * @brief Campaign difficulty selection menu with progressive unlocking.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Displays campaign levels with progression:
+ * - Easy [1]: Base level (Min: 40 WPM, 80% Acc)
+ * - Medium [2]: Locked until Easy passed (Min: 60 WPM, 85% Acc)
+ * - Hard [3]: Locked until Medium passed (Min: 80 WPM, 90% Acc)
+ * - Programmer [4]: Special challenge level
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_1 to Key_4: Select difficulty (if unlocked)
+ * - Key_C: View credits
+ * - Key_R: Reset progress
+ * - Key_Escape: Go back
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 
+/**
+ * @brief Campaign difficulty selection page with unlock progression.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: campaignMenuPage
     color: Theme.bgPrimary
     focus: true
 
-    // Campaign progress state (passed from main window)
+    /* ========================================================================
+     * CAMPAIGN PROGRESS STATE
+     * ======================================================================== */
+
+    /** @property easyPassed @brief Whether Easy level has been completed. */
     property bool easyPassed: true
+
+    /** @property mediumPassed @brief Whether Medium level has been completed. */
     property bool mediumPassed: false
+
+    /** @property hardPassed @brief Whether Hard level has been completed. */
     property bool hardPassed: false
+
+    /** @property programmerCertified @brief Whether Programmer challenge is completed. */
     property bool programmerCertified: false
 
-    // Navigation signals
+    /* ========================================================================
+     * NAVIGATION SIGNALS
+     * ======================================================================== */
+
+    /** @signal difficultySelected @brief Emitted with selected difficulty string. */
     signal difficultySelected(string difficulty)
+
+    /** @signal creditsClicked @brief Emitted when user presses [C]. */
     signal creditsClicked
+
+    /** @signal resetClicked @brief Emitted when user presses [R]. */
     signal resetClicked
+
+    /** @signal backClicked @brief Emitted when user presses [ESC]. */
     signal backClicked
 
     Keys.onPressed: function (event) {
@@ -149,5 +191,3 @@ Rectangle {
         }
     }
 }
-
-

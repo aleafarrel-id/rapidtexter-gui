@@ -1,17 +1,42 @@
+/**
+ * @file DurationMenuPage.qml
+ * @brief Game duration selection menu page.
+ * @author RapidTexter Team
+ * @date 2026
+ *
+ * Allows users to select the typing test duration:
+ * - 15 seconds [1]
+ * - 30 seconds [2]
+ * - 60 seconds [3]
+ * - Custom duration [4]
+ * - Infinity [5] (no time limit)
+ *
+ * @section shortcuts Keyboard Shortcuts
+ * - Key_1 to Key_5: Select corresponding duration
+ * - Key_Escape: Go back
+ */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import rapid_texter 1.0
 import "../components"
 
+/**
+ * @brief Duration selection page component.
+ * @inherits Rectangle
+ */
 Rectangle {
     id: durationMenuPage
     color: Theme.bgPrimary
     focus: true
 
-    // Navigation signals
+    /** @signal durationSelected @brief Emitted with selected duration string. */
     signal durationSelected(string duration)
+
+    /** @signal customDurationClicked @brief Emitted when user selects custom option. */
     signal customDurationClicked
+
+    /** @signal backClicked @brief Emitted when user presses [ESC]. */
     signal backClicked
 
     Keys.onPressed: function (event) {
