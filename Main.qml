@@ -1454,11 +1454,45 @@ ApplicationWindow {
             property int totalPages: 1
             property int totalEntries: 0
 
-            // Load history data from backend
+            // Sort settings (persisted via GameBackend)
+            property string sortBy: GameBackend.historySortBy
+            property bool sortAscending: GameBackend.historySortAscending
+
+            // Mode filter (session-only, not persisted)
+            property string modeFilter: "All"
+            property bool showModeDropdown: false
+
+            // Load history data from backend with sorting and filtering
             function loadHistory() {
-                historyData = GameBackend.getHistoryPage(currentPage, 10);
+                historyData = GameBackend.getHistoryPageSorted(currentPage, 10, sortBy, sortAscending, modeFilter);
                 totalPages = GameBackend.getHistoryTotalPages(10);
                 totalEntries = GameBackend.getHistoryTotalEntries();
+            }
+
+            // Toggle sort on column click
+            function toggleSort(column) {
+                if (sortBy === column) {
+                    // Same column, toggle direction
+                    sortAscending = !sortAscending;
+                    GameBackend.historySortAscending = sortAscending;
+                } else {
+                    // New column, set default direction
+                    sortBy = column;
+                    GameBackend.historySortBy = column;
+                    // Default: date = descending (newest first), wpm = descending (highest first)
+                    sortAscending = false;
+                    GameBackend.historySortAscending = false;
+                }
+                currentPage = 1; // Reset to first page
+                loadHistory();
+            }
+
+            // Set mode filter
+            function setModeFilter(mode) {
+                modeFilter = mode;
+                showModeDropdown = false;
+                currentPage = 1; // Reset to first page
+                loadHistory();
             }
 
             Component.onCompleted: {
@@ -1583,15 +1617,56 @@ ApplicationWindow {
                                 anchors.rightMargin: Theme.paddingHuge
                                 spacing: 0
 
-                                Text {
+                                // WPM Header - Sortable
+                                Item {
                                     Layout.fillWidth: true
                                     Layout.preferredWidth: 60
-                                    text: "WPM"
-                                    color: Theme.textSecondary
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fontSizeS
-                                    font.bold: true
-                                    horizontalAlignment: Text.AlignHCenter
+                                    height: parent.height
+
+                                    property bool isHovered: wpmHeaderMouse.containsMouse
+
+                                    Row {
+                                        anchors.centerIn: parent
+                                        spacing: 4
+
+                                        Text {
+                                            text: "WPM"
+                                            color: parent.parent.isHovered ? Theme.accentBlue : (sortBy === "wpm" ? Theme.accentBlue : Theme.textSecondary)
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.fontSizeS
+                                            font.bold: true
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+
+                                        // Sort indicator
+                                        Item {
+                                            width: 12
+                                            height: 12
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            visible: sortBy === "wpm"
+
+                                            Image {
+                                                id: wpmSortIcon
+                                                source: sortAscending ? "qrc:/qt/qml/rapid_texter/assets/icons/chevron-up.svg" : "qrc:/qt/qml/rapid_texter/assets/icons/chevron-down.svg"
+                                                anchors.fill: parent
+                                                sourceSize: Qt.size(12, 12)
+                                                visible: false
+                                            }
+                                            ColorOverlay {
+                                                anchors.fill: wpmSortIcon
+                                                source: wpmSortIcon
+                                                color: Theme.accentBlue
+                                            }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: wpmHeaderMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: toggleSort("wpm")
+                                    }
                                 }
                                 Text {
                                     Layout.fillWidth: true
@@ -1643,25 +1718,107 @@ ApplicationWindow {
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                 }
-                                Text {
+                                // MODE Header - Filterable
+                                Item {
+                                    id: modeHeaderItem
                                     Layout.fillWidth: true
                                     Layout.preferredWidth: 80
-                                    text: "MODE"
-                                    color: Theme.textSecondary
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fontSizeS
-                                    font.bold: true
-                                    horizontalAlignment: Text.AlignHCenter
+                                    height: parent.height
+
+                                    property bool isHovered: modeHeaderMouse.containsMouse
+
+                                    Row {
+                                        anchors.centerIn: parent
+                                        spacing: 4
+
+                                        Text {
+                                            text: modeFilter === "All" ? "MODE" : modeFilter.toUpperCase()
+                                            color: modeHeaderItem.isHovered ? Theme.accentBlue : (modeFilter !== "All" ? Theme.accentBlue : Theme.textSecondary)
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.fontSizeS
+                                            font.bold: true
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+
+                                        // Dropdown indicator
+                                        Item {
+                                            width: 12
+                                            height: 12
+                                            anchors.verticalCenter: parent.verticalCenter
+
+                                            Image {
+                                                id: modeDropdownIcon
+                                                source: showModeDropdown ? "qrc:/qt/qml/rapid_texter/assets/icons/chevron-up.svg" : "qrc:/qt/qml/rapid_texter/assets/icons/chevron-down.svg"
+                                                anchors.fill: parent
+                                                sourceSize: Qt.size(12, 12)
+                                                visible: false
+                                            }
+                                            ColorOverlay {
+                                                anchors.fill: modeDropdownIcon
+                                                source: modeDropdownIcon
+                                                color: modeHeaderItem.isHovered ? Theme.accentBlue : (modeFilter !== "All" ? Theme.accentBlue : Theme.textSecondary)
+                                            }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: modeHeaderMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: showModeDropdown = !showModeDropdown
+                                    }
                                 }
-                                Text {
+                                // DATE/TIME Header - Sortable
+                                Item {
                                     Layout.fillWidth: true
                                     Layout.preferredWidth: 130
-                                    text: "DATE/TIME"
-                                    color: Theme.textSecondary
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fontSizeS
-                                    font.bold: true
-                                    horizontalAlignment: Text.AlignHCenter
+                                    height: parent.height
+
+                                    property bool isHovered: dateHeaderMouse.containsMouse
+
+                                    Row {
+                                        anchors.centerIn: parent
+                                        spacing: 4
+
+                                        Text {
+                                            text: "DATE/TIME"
+                                            color: parent.parent.isHovered ? Theme.accentBlue : (sortBy === "date" ? Theme.accentBlue : Theme.textSecondary)
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.fontSizeS
+                                            font.bold: true
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+
+                                        // Sort indicator
+                                        Item {
+                                            width: 12
+                                            height: 12
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            visible: sortBy === "date"
+
+                                            Image {
+                                                id: dateSortIcon
+                                                source: sortAscending ? "qrc:/qt/qml/rapid_texter/assets/icons/chevron-up.svg" : "qrc:/qt/qml/rapid_texter/assets/icons/chevron-down.svg"
+                                                anchors.fill: parent
+                                                sourceSize: Qt.size(12, 12)
+                                                visible: false
+                                            }
+                                            ColorOverlay {
+                                                anchors.fill: dateSortIcon
+                                                source: dateSortIcon
+                                                color: Theme.accentBlue
+                                            }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: dateHeaderMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: toggleSort("date")
+                                    }
                                 }
                             }
                         }
@@ -1876,6 +2033,119 @@ ApplicationWindow {
                         labelText: "Clear History (C)"
                         variant: "danger"
                         onClicked: stackView.push(resetHistoryComponent)
+                    }
+                }
+            }
+
+            // Background overlay to close dropdown when clicking outside
+            MouseArea {
+                id: dropdownBackgroundOverlay
+                anchors.fill: parent
+                visible: showModeDropdown
+                z: 9998
+                onClicked: showModeDropdown = false
+            }
+
+            // Mode Filter Dropdown Overlay - placed at Rectangle level for proper z-ordering
+            Rectangle {
+                id: modeDropdownMenu
+                visible: showModeDropdown
+                x: {
+                    // Get position relative to the Rectangle
+                    var pos = modeHeaderItem.mapToItem(parent, 0, 0);
+                    return pos.x + (modeHeaderItem.width - width) / 2;
+                }
+                y: {
+                    var pos = modeHeaderItem.mapToItem(parent, 0, 0);
+                    return pos.y + modeHeaderItem.height + 4;
+                }
+                width: 110
+                height: modeDropdownCol2.implicitHeight + Theme.paddingM * 2
+                color: Theme.bgSecondary
+                border.width: 1
+                border.color: Theme.borderPrimary
+                radius: 6
+                z: 9999
+
+                Column {
+                    id: modeDropdownCol2
+                    anchors.fill: parent
+                    anchors.margins: Theme.paddingM
+                    spacing: 2
+
+                    // All option
+                    Rectangle {
+                        width: parent.width
+                        height: 30
+                        color: allOpt2Mouse.containsMouse ? Theme.bgHover : "transparent"
+                        radius: 4
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "All"
+                            color: modeFilter === "All" ? Theme.accentBlue : Theme.textPrimary
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeS
+                            font.bold: modeFilter === "All"
+                        }
+
+                        MouseArea {
+                            id: allOpt2Mouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: setModeFilter("All")
+                        }
+                    }
+
+                    // Manual option
+                    Rectangle {
+                        width: parent.width
+                        height: 30
+                        color: manualOpt2Mouse.containsMouse ? Theme.bgHover : "transparent"
+                        radius: 4
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Manual"
+                            color: modeFilter === "Manual" ? Theme.accentBlue : Theme.textPrimary
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeS
+                            font.bold: modeFilter === "Manual"
+                        }
+
+                        MouseArea {
+                            id: manualOpt2Mouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: setModeFilter("Manual")
+                        }
+                    }
+
+                    // Campaign option
+                    Rectangle {
+                        width: parent.width
+                        height: 30
+                        color: campaignOpt2Mouse.containsMouse ? Theme.bgHover : "transparent"
+                        radius: 4
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Campaign"
+                            color: modeFilter === "Campaign" ? Theme.accentBlue : Theme.textPrimary
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeS
+                            font.bold: modeFilter === "Campaign"
+                        }
+
+                        MouseArea {
+                            id: campaignOpt2Mouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: setModeFilter("Campaign")
+                        }
                     }
                 }
             }

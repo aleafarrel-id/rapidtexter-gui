@@ -119,6 +119,8 @@ qt_add_qml_module(RapidTexterGUI
         assets/icons/info.svg
         assets/icons/infinity.svg
         assets/icons/sliders.svg
+        assets/icons/chevron-up.svg
+        assets/icons/chevron-down.svg
 )
 
 set_target_properties(RapidTexterGUI PROPERTIES

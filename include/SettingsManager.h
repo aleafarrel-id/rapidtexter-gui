@@ -27,6 +27,8 @@
  * Settings yang disimpan:
  * - sfx_enabled: Status SFX (true/false)
  * - default_duration: Durasi default dalam detik (-1 untuk unlimited)
+ * - history_sort_by: Field untuk sorting history ("date" atau "wpm")
+ * - history_sort_ascending: Arah sorting (true = ascending, false = descending)
  */
 class SettingsManager {
 public:
@@ -74,11 +76,37 @@ public:
    */
   static void setDefaultDuration(int duration);
 
+  /**
+   * @brief Mendapatkan field sorting history
+   * @return "date" atau "wpm"
+   */
+  static std::string getHistorySortBy();
+
+  /**
+   * @brief Mengatur field sorting history dan menyimpan ke file
+   * @param sortBy Field untuk sorting ("date" atau "wpm")
+   */
+  static void setHistorySortBy(const std::string& sortBy);
+
+  /**
+   * @brief Mendapatkan arah sorting history
+   * @return true untuk ascending, false untuk descending
+   */
+  static bool getHistorySortAscending();
+
+  /**
+   * @brief Mengatur arah sorting history dan menyimpan ke file
+   * @param ascending true untuk ascending, false untuk descending
+   */
+  static void setHistorySortAscending(bool ascending);
+
 private:
-  static bool sfxEnabled;      ///< Status SFX (default: true)
-  static int defaultDuration;  ///< Durasi default (default: 30)
-  static bool isLoaded;        ///< Flag: settings sudah di-load
-  static std::string filename; ///< Path ke file settings.json
+  static bool sfxEnabled;            ///< Status SFX (default: true)
+  static int defaultDuration;        ///< Durasi default (default: 30)
+  static std::string historySortBy;  ///< Field sort history (default: "date")
+  static bool historySortAscending;  ///< Arah sort (default: false = descending)
+  static bool isLoaded;              ///< Flag: settings sudah di-load
+  static std::string filename;       ///< Path ke file settings.json
 
   /**
    * @brief Mendapatkan path direktori data aplikasi

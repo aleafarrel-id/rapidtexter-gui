@@ -12,6 +12,7 @@
 #include <QQmlEngine>
 #include <QJSEngine>
 #include <QTimer>
+#include <algorithm>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -262,6 +263,93 @@ QVariantList GameBackend::getHistoryPage(int pageNumber, int pageSize)
     return result;
 }
 
+QVariantList GameBackend::getHistoryPageSorted(int pageNumber, int pageSize, const QString& sortBy, bool ascending, const QString& modeFilter)
+{
+    // Get all entries first, then filter, sort, then paginate
+    int totalEntries = m_historyManager.getTotalEntries();
+    if (totalEntries == 0) {
+        return QVariantList();
+    }
+    
+    // Get all entries (use a large page to get all)
+    int allPageSize = totalEntries;
+    std::vector<HistoryEntry> allEntries = m_historyManager.getPage(1, allPageSize);
+    
+    // Filter by mode if not "All"
+    std::vector<HistoryEntry> filteredEntries;
+    if (modeFilter != "All" && !modeFilter.isEmpty()) {
+        std::string modeStr = modeFilter.toStdString();
+        for (const auto& entry : allEntries) {
+            if (entry.mode == modeStr) {
+                filteredEntries.push_back(entry);
+            }
+        }
+    } else {
+        filteredEntries = allEntries;
+    }
+    
+    if (filteredEntries.empty()) {
+        return QVariantList();
+    }
+    
+    // Sort based on sortBy and ascending
+    if (sortBy == "wpm") {
+        std::sort(filteredEntries.begin(), filteredEntries.end(),
+            [ascending](const HistoryEntry& a, const HistoryEntry& b) {
+                return ascending ? (a.wpm < b.wpm) : (a.wpm > b.wpm);
+            });
+    } else {
+        // Sort by date (timestamp) - default
+        // Timestamp format: DD/MM/YYYY HH:MM:SS
+        // For proper date comparison, we need to parse it
+        std::sort(filteredEntries.begin(), filteredEntries.end(),
+            [ascending](const HistoryEntry& a, const HistoryEntry& b) {
+                // Parse timestamps for comparison
+                // Format: DD/MM/YYYY HH:MM:SS
+                auto parseTimestamp = [](const std::string& ts) -> long long {
+                    if (ts.length() < 19) return 0;
+                    int day = std::stoi(ts.substr(0, 2));
+                    int month = std::stoi(ts.substr(3, 2));
+                    int year = std::stoi(ts.substr(6, 4));
+                    int hour = std::stoi(ts.substr(11, 2));
+                    int minute = std::stoi(ts.substr(14, 2));
+                    int second = std::stoi(ts.substr(17, 2));
+                    // Convert to comparable number (YYYYMMDDHHmmss)
+                    return (long long)year * 10000000000LL + 
+                           (long long)month * 100000000LL + 
+                           (long long)day * 1000000LL + 
+                           (long long)hour * 10000LL + 
+                           (long long)minute * 100LL + 
+                           (long long)second;
+                };
+                long long timeA = parseTimestamp(a.timestamp);
+                long long timeB = parseTimestamp(b.timestamp);
+                return ascending ? (timeA < timeB) : (timeA > timeB);
+            });
+    }
+    
+    // Paginate
+    int startIdx = (pageNumber - 1) * pageSize;
+    int endIdx = std::min(startIdx + pageSize, (int)filteredEntries.size());
+    
+    QVariantList result;
+    for (int i = startIdx; i < endIdx; ++i) {
+        const auto& entry = filteredEntries[i];
+        QVariantMap item;
+        item["wpm"] = entry.wpm;
+        item["accuracy"] = entry.accuracy;
+        item["errors"] = entry.errors;
+        item["targetWPM"] = entry.targetWPM;
+        item["difficulty"] = QString::fromStdString(entry.difficulty);
+        item["language"] = QString::fromStdString(entry.language);
+        item["mode"] = QString::fromStdString(entry.mode);
+        item["timestamp"] = QString::fromStdString(entry.timestamp);
+        result.append(item);
+    }
+    
+    return result;
+}
+
 int GameBackend::getHistoryTotalPages(int pageSize)
 {
     return m_historyManager.getTotalPages(pageSize);
@@ -371,6 +459,33 @@ void GameBackend::setDefaultDuration(int duration)
         m_defaultDuration = duration;
         SettingsManager::setDefaultDuration(duration);
         emit defaultDurationChanged();
+    }
+}
+
+QString GameBackend::historySortBy() const
+{
+    return QString::fromStdString(SettingsManager::getHistorySortBy());
+}
+
+void GameBackend::setHistorySortBy(const QString& sortBy)
+{
+    QString current = QString::fromStdString(SettingsManager::getHistorySortBy());
+    if (current != sortBy) {
+        SettingsManager::setHistorySortBy(sortBy.toStdString());
+        emit historySortByChanged();
+    }
+}
+
+bool GameBackend::historySortAscending() const
+{
+    return SettingsManager::getHistorySortAscending();
+}
+
+void GameBackend::setHistorySortAscending(bool ascending)
+{
+    if (SettingsManager::getHistorySortAscending() != ascending) {
+        SettingsManager::setHistorySortAscending(ascending);
+        emit historySortAscendingChanged();
     }
 }
 

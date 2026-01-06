@@ -42,6 +42,8 @@
 
 bool SettingsManager::sfxEnabled = true;   // Default: SFX on
 int SettingsManager::defaultDuration = 30; // Default: 30 detik
+std::string SettingsManager::historySortBy = "date"; // Default: sort by date
+bool SettingsManager::historySortAscending = false;  // Default: descending (newest first)
 bool SettingsManager::isLoaded = false;
 std::string SettingsManager::filename = "";
 
@@ -157,6 +159,25 @@ bool SettingsManager::load() {
         }
       }
     }
+    // Parse history_sort_by
+    else if (line.find("\"history_sort_by\"") != std::string::npos) {
+      size_t colonPos = line.find(":");
+      if (colonPos != std::string::npos) {
+        size_t firstQuote = line.find('"', colonPos);
+        size_t lastQuote = line.rfind('"');
+        if (firstQuote != std::string::npos && lastQuote > firstQuote) {
+          historySortBy = line.substr(firstQuote + 1, lastQuote - firstQuote - 1);
+        }
+      }
+    }
+    // Parse history_sort_ascending
+    else if (line.find("\"history_sort_ascending\"") != std::string::npos) {
+      if (line.find("true") != std::string::npos) {
+        historySortAscending = true;
+      } else if (line.find("false") != std::string::npos) {
+        historySortAscending = false;
+      }
+    }
   }
 
   file.close();
@@ -190,7 +211,9 @@ bool SettingsManager::save() {
 
   file << "{\n";
   file << "  \"sfx_enabled\": " << (sfxEnabled ? "true" : "false") << ",\n";
-  file << "  \"default_duration\": " << defaultDuration << "\n";
+  file << "  \"default_duration\": " << defaultDuration << ",\n";
+  file << "  \"history_sort_by\": \"" << historySortBy << "\",\n";
+  file << "  \"history_sort_ascending\": " << (historySortAscending ? "true" : "false") << "\n";
   file << "}\n";
 
   file.close();
@@ -246,5 +269,45 @@ int SettingsManager::getDefaultDuration() {
  */
 void SettingsManager::setDefaultDuration(int duration) {
   defaultDuration = duration;
+  save();
+}
+
+/**
+ * @brief Mendapatkan field sorting history
+ * @return "date" atau "wpm"
+ */
+std::string SettingsManager::getHistorySortBy() {
+  if (!isLoaded) {
+    load();
+  }
+  return historySortBy;
+}
+
+/**
+ * @brief Mengatur field sorting history dan menyimpan ke file
+ * @param sortBy Field untuk sorting ("date" atau "wpm")
+ */
+void SettingsManager::setHistorySortBy(const std::string& sortBy) {
+  historySortBy = sortBy;
+  save();
+}
+
+/**
+ * @brief Mendapatkan arah sorting history
+ * @return true untuk ascending, false untuk descending
+ */
+bool SettingsManager::getHistorySortAscending() {
+  if (!isLoaded) {
+    load();
+  }
+  return historySortAscending;
+}
+
+/**
+ * @brief Mengatur arah sorting history dan menyimpan ke file
+ * @param ascending true untuk ascending, false untuk descending
+ */
+void SettingsManager::setHistorySortAscending(bool ascending) {
+  historySortAscending = ascending;
   save();
 }

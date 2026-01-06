@@ -48,6 +48,8 @@ class GameBackend : public QObject
     // Properties untuk QML binding
     Q_PROPERTY(bool sfxEnabled READ sfxEnabled WRITE setSfxEnabled NOTIFY sfxEnabledChanged)
     Q_PROPERTY(int defaultDuration READ defaultDuration WRITE setDefaultDuration NOTIFY defaultDurationChanged)
+    Q_PROPERTY(QString historySortBy READ historySortBy WRITE setHistorySortBy NOTIFY historySortByChanged)
+    Q_PROPERTY(bool historySortAscending READ historySortAscending WRITE setHistorySortAscending NOTIFY historySortAscendingChanged)
 
 public:
     /**
@@ -135,6 +137,17 @@ public:
     Q_INVOKABLE QVariantList getHistoryPage(int pageNumber, int pageSize = 5);
 
     /**
+     * @brief Mendapatkan halaman history dengan sorting
+     * @param pageNumber Nomor halaman (1-based)
+     * @param pageSize Jumlah entry per halaman
+     * @param sortBy Field untuk sorting ("date" atau "wpm")
+     * @param ascending true untuk ascending, false untuk descending
+     * @param modeFilter Filter mode ("All", "Manual", "Campaign")
+     * @return List of sorted history entries sebagai QVariantList
+     */
+    Q_INVOKABLE QVariantList getHistoryPageSorted(int pageNumber, int pageSize, const QString& sortBy, bool ascending, const QString& modeFilter = "All");
+
+    /**
      * @brief Mendapatkan total halaman history
      */
     Q_INVOKABLE int getHistoryTotalPages(int pageSize = 5);
@@ -199,11 +212,33 @@ public:
      */
     void setDefaultDuration(int duration);
 
+    /**
+     * @brief Get history sort by field
+     */
+    QString historySortBy() const;
+
+    /**
+     * @brief Set history sort by field
+     */
+    void setHistorySortBy(const QString& sortBy);
+
+    /**
+     * @brief Get history sort ascending
+     */
+    bool historySortAscending() const;
+
+    /**
+     * @brief Set history sort ascending
+     */
+    void setHistorySortAscending(bool ascending);
+
 signals:
     void sfxEnabledChanged();
     void defaultDurationChanged();
     void progressUpdated();
     void historyUpdated();
+    void historySortByChanged();
+    void historySortAscendingChanged();
 
 private:
     explicit GameBackend(QObject *parent = nullptr);
