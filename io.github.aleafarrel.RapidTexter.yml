@@ -11,8 +11,9 @@ finish-args:
   - --socket=fallback-x11
   # OpenGL rendering
   - --device=dri
-  # Audio for sound effects
+  # Audio: PulseAudio for compatibility, plus direct PipeWire access for lower latency
   - --socket=pulseaudio
+  - --filesystem=xdg-run/pipewire-0
   # For storing user data (history, progress, settings)
   - --filesystem=xdg-config/rapidtexter:create
 
