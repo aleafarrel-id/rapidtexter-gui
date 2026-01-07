@@ -169,16 +169,21 @@ The build result will be in the `build/Release/` (Windows) or `build/` (Linux) f
 ## 📂 Project Structure
 
 ```text
-rapidtexter-gui/
-├── assets/             # Word banks, fonts, icons, sfx
-├── src/                # C++ Backend logic (GameBackend, Stats, etc.)
-├── include/            # Header files C++
-├── qml/                # User Interface (Qt Quick/QML)
-│   ├── components/     # Reusable UI components (Button, Card, etc.)
-│   └── pages/          # Screen pages (Menu, Game, Result)
-├── resources/          # Resource definition (.rc and icons)
-├── CMakeLists.txt      # CMake Build Configuration
-└── README.md           # This documentation
+rapid-texter-gui/
+├── assets/                             # Word banks (en, id, prog), fonts, icons, sfx
+├── include/                            # C++ header files
+├── src/                                # C++ implementation files
+├── qml/                                # Qt Quick/QML UI
+│   ├── components/                     # Reusable UI components (Theme, NavBtn, etc.)
+│   └── pages/                          # Screen pages (Menu, Game, Result, History)
+├── resources/                          # Windows resource files (.rc, icons)
+├── Main.qml                            # Main QML entry point
+├── main.cpp                            # C++ application entry point
+├── CMakeLists.txt                      # CMake build configuration
+├── build_flatpak.sh                    # Flatpak build script (Linux)
+├── build_rpm.sh                        # RPM build script (Fedora)
+├── make_installer.nsi                  # NSIS installer script (Windows)
+└── io.github.aleafarrel.RapidTexter.*  # Linux flatpak packaging files
 ```
 
 ## 📜 License
