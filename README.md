@@ -37,10 +37,14 @@ The easiest way to use Rapid Texter is by downloading the provided installer.
 3. Run the `.exe` file and follow the installation instructions.
 4. The application is ready to use! A shortcut will be available on your Desktop and Start Menu.
 
-### 🐧 Linux (AppImage)
-1. Download the `.AppImage` file from the Releases page.
-2. Grant execution permission: `chmod +x RapidTexterGUI-x86_64.AppImage`.
-3. Run the application!
+### 🐧 Linux (RPM)
+> [!NOTE]
+> Currently only available for RPM-based distributions. Tested on **Fedora 43**.
+
+1. Go to the latest **[Releases](https://github.com/aleafarrel-id/rapidtexter-gui/releases)** page.
+2. Download the `.rpm` file.
+3. Install via terminal: `sudo dnf install ./RapidTexterGUI-x86_64.rpm`
+4. The application is ready to use!
 
 ---
 
