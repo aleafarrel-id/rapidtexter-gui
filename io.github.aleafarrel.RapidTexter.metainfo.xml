@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.aleafarrel.RapidTexter</id>
+  <name>Rapid Texter</name>
+  <summary>Improve your typing speed and accuracy</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  
+  <developer id="io.github.aleafarrel">
+    <name>aleafarrel</name>
+  </developer>
+  
+  <description>
+    <p>
+      RapidTexter is a modern typing practice application built with Qt/QML. 
+      It helps you improve your typing speed and accuracy through engaging 
+      practice sessions.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Multiple language support (English, Indonesian, Programming)</li>
+      <li>Campaign mode with progressive challenges</li>
+      <li>Custom duration settings</li>
+      <li>Detailed statistics and history tracking</li>
+      <li>Sound effects for immediate feedback</li>
+      <li>Beautiful modern interface</li>
+    </ul>
+  </description>
+  
+  <launchable type="desktop-id">io.github.aleafarrel.RapidTexter.desktop</launchable>
+  
+  <url type="homepage">https://github.com/aleafarrel/rapidtexter-gui</url>
+  <url type="bugtracker">https://github.com/aleafarrel/rapidtexter-gui/issues</url>
+  <url type="vcs-browser">https://github.com/aleafarrel/rapidtexter-gui</url>
+  
+  <provides>
+    <binary>RapidTexterGUI</binary>
+  </provides>
+  
+  <content_rating type="oars-1.1" />
+  
+  <categories>
+    <category>Game</category>
+    <category>Education</category>
+  </categories>
+  
+  <keywords>
+    <keyword>typing</keyword>
+    <keyword>keyboard</keyword>
+    <keyword>practice</keyword>
+    <keyword>speed</keyword>
+    <keyword>wpm</keyword>
+    <keyword>education</keyword>
+  </keywords>
+  
+  <releases>
+    <release version="1.0.0" date="2026-01-07">
+      <description>
+        <p>Initial Flatpak release</p>
+      </description>
+    </release>
+  </releases>
+  
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </recommends>
+  
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+</component>

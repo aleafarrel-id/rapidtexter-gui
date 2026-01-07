@@ -39,12 +39,40 @@ The easiest way to use Rapid Texter is by downloading the provided installer.
 
 ### 🐧 Linux (RPM)
 > [!NOTE]
-> Currently only available for RPM-based distributions. Tested on **Fedora 43**.
+> For RPM-based distributions. Tested on **Fedora 43**.
 
 1. Go to the latest **[Releases](https://github.com/aleafarrel-id/rapidtexter-gui/releases)** page.
 2. Download the `.rpm` file.
 3. Install via terminal: `sudo dnf install ./RapidTexterGUI-x86_64.rpm`
 4. The application is ready to use!
+
+### 🐧 Linux (Flatpak) - Universal
+> [!TIP]
+> **Recommended for all Linux distributions!** Works on Debian, Ubuntu, Arch, Fedora, openSUSE, and more.
+
+1. Make sure Flatpak is installed on your system:
+   ```bash
+   # Fedora
+   sudo dnf install flatpak
+   
+   # Ubuntu/Debian
+   sudo apt install flatpak
+   
+   # Arch
+   sudo pacman -S flatpak
+   ```
+
+2. Download the `.flatpak` file from the **[Releases](https://github.com/aleafarrel-id/rapidtexter-gui/releases)** page.
+
+3. Install via terminal:
+   ```bash
+   flatpak install --user RapidTexterGUI.flatpak
+   ```
+
+4. Run the application:
+   ```bash
+   flatpak run io.github.aleafarrel.RapidTexter
+   ```
 
 ---
 

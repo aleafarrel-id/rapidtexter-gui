@@ -1,0 +1,26 @@
+app-id: io.github.aleafarrel.RapidTexter
+runtime: org.kde.Platform
+runtime-version: '6.8'
+sdk: org.kde.Sdk
+command: RapidTexterGUI
+
+finish-args:
+  # Display (Wayland + X11 fallback)
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  # OpenGL rendering
+  - --device=dri
+  # Audio for sound effects
+  - --socket=pulseaudio
+  # For storing user data (history, progress, settings)
+  - --filesystem=xdg-config/rapidtexter:create
+
+modules:
+  - name: rapidtexter
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+    sources:
+      - type: dir
+        path: .

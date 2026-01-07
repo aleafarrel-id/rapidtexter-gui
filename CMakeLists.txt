@@ -134,3 +134,28 @@ set_target_properties(RapidTexterGUI PROPERTIES
 target_link_libraries(RapidTexterGUI
     PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia
 )
+
+# --- Installation Rules (untuk Flatpak dan RPM) ---
+include(GNUInstallDirs)
+
+# Install executable
+install(TARGETS RapidTexterGUI
+    BUNDLE DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+# Install desktop file
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/io.github.aleafarrel.RapidTexter.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+)
+
+# Install AppStream metainfo
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/io.github.aleafarrel.RapidTexter.metainfo.xml
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo
+)
+
+# Install icon
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/resources/app_icon.png
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps
+    RENAME io.github.aleafarrel.RapidTexter.png
+)

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Rapid Texter
+GenericName=Typing Practice
+Comment=Improve your typing speed and accuracy
+Icon=io.github.aleafarrel.RapidTexter
+Exec=RapidTexterGUI
+Categories=Game;Education;
+Keywords=typing;keyboard;practice;speed;wpm;
+Terminal=false
+StartupWMClass=RapidTexterGUI
