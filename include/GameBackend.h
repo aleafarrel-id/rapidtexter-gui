@@ -126,7 +126,8 @@ public:
      */
     Q_INVOKABLE void saveGameResult(double wpm, double accuracy, int errors,
                                      int targetWPM, const QString& difficulty,
-                                     const QString& language, const QString& mode);
+                                     const QString& language, const QString& mode,
+                                     double timeElapsed);
 
     /**
      * @brief Mendapatkan halaman history

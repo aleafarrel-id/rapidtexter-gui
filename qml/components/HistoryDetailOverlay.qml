@@ -40,6 +40,20 @@ Rectangle {
     /** @signal close @brief Emitted when overlay should be closed. */
     signal close
 
+    /** @function formatTime @brief Formats seconds into human readable time (e.g., "15s" or "1m 30s") */
+    function formatTime(seconds) {
+        if (seconds === undefined || seconds === null || seconds === 0)
+            return "-";
+        var secs = Math.round(seconds);
+        if (secs < 60) {
+            return secs + "s";
+        } else {
+            var mins = Math.floor(secs / 60);
+            var remainingSecs = secs % 60;
+            return mins + "m " + remainingSecs + "s";
+        }
+    }
+
     // State machine for smooth open/close animations
     states: [
         State {
@@ -151,7 +165,7 @@ Rectangle {
     Rectangle {
         id: contentCard
         anchors.centerIn: parent
-        width: Math.min(parent.width - Theme.paddingHuge * 2, 480)
+        width: Math.min(parent.width - Theme.paddingHuge * 2, 580)
         height: contentColumn.implicitHeight + Theme.paddingXXL * 2
         color: Theme.bgSecondary
         border.width: 1
@@ -306,6 +320,11 @@ Rectangle {
                             label: "ERRORS",
                             value: overlay.recordData ? overlay.recordData.errors.toString() : "0",
                             color: Theme.accentRed
+                        },
+                        {
+                            label: "TIME",
+                            value: overlay.recordData ? formatTime(overlay.recordData.timeElapsed) : "-",
+                            color: Theme.accentYellow
                         }
                     ]
 
@@ -428,6 +447,22 @@ Rectangle {
                         }
                         Text {
                             text: overlay.recordData ? overlay.recordData.timestamp : "-"
+                            color: Theme.textPrimary
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeM
+                            font.bold: true
+                            Layout.fillWidth: true
+                        }
+
+                        // Time Played
+                        Text {
+                            text: "Time Played"
+                            color: Theme.textSecondary
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeM
+                        }
+                        Text {
+                            text: overlay.recordData ? formatTime(overlay.recordData.timeElapsed) : "-"
                             color: Theme.textPrimary
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSizeM

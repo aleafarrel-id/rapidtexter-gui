@@ -1000,7 +1000,7 @@ ApplicationWindow {
                 }
 
                 // Save to history via GameBackend
-                GameBackend.saveGameResult(wpm, accuracy, errors, mainWindow.currentTargetWPM, mainWindow.currentDifficulty, langForProgress, mainWindow.currentMode);
+                GameBackend.saveGameResult(wpm, accuracy, errors, mainWindow.currentTargetWPM, mainWindow.currentDifficulty, langForProgress, mainWindow.currentMode, timeElapsed);
 
                 // Check if this is a first-time hard completion BEFORE calling completeLevel
                 // (completeLevel will mark it as completed, so we need to check first)

@@ -264,16 +264,4 @@ Rectangle {
             }
         }
     }
-
-    // Version text at bottom
-    Text {
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 30
-        text: "v1.0"
-        color: Theme.textMuted
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSizeS
-        opacity: 0.5
-    }
 }

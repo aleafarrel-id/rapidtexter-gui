@@ -221,13 +221,15 @@ void GameBackend::setSfxEnabled(bool enabled)
 
 void GameBackend::saveGameResult(double wpm, double accuracy, int errors,
                                   int targetWPM, const QString& difficulty,
-                                  const QString& language, const QString& mode)
+                                  const QString& language, const QString& mode,
+                                  double timeElapsed)
 {
     HistoryEntry entry;
     entry.wpm = wpm;
     entry.accuracy = accuracy;
     entry.errors = errors;
     entry.targetWPM = targetWPM;
+    entry.timeElapsed = timeElapsed;
     // Capitalize difficulty for display (e.g., "easy" -> "Easy")
     QString capitalizedDiff = difficulty;
     if (!capitalizedDiff.isEmpty()) {
@@ -257,6 +259,7 @@ QVariantList GameBackend::getHistoryPage(int pageNumber, int pageSize)
         item["language"] = QString::fromStdString(entry.language);
         item["mode"] = QString::fromStdString(entry.mode);
         item["timestamp"] = QString::fromStdString(entry.timestamp);
+        item["timeElapsed"] = entry.timeElapsed;
         result.append(item);
     }
     
@@ -365,6 +368,7 @@ QVariantList GameBackend::getHistoryPageSorted(int pageNumber, int pageSize, con
         item["language"] = QString::fromStdString(entry.language);
         item["mode"] = QString::fromStdString(entry.mode);
         item["timestamp"] = QString::fromStdString(entry.timestamp);
+        item["timeElapsed"] = entry.timeElapsed;
         result.append(item);
     }
     
