@@ -72,6 +72,9 @@ flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flath
 flatpak install --user flathub org.kde.Platform//6.8
 ```
 
+> [!NOTE]
+> **About the runtime size:** The KDE Platform runtime is large (~800MB), but it's a **one-time download**. This runtime is **shared across all Qt/KDE applications** (like Krita, Kdenlive, Kate, etc.). If you already have another KDE app installed via Flatpak, you won't need to download it again!
+
 **Step 4: Download & Install RapidTexter**
 1. Download `RapidTexterGUI.flatpak` from **[Releases](https://github.com/aleafarrel/rapidtexter-gui/releases)**
 2. Install via terminal:
