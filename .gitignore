@@ -32,6 +32,8 @@ qrc_*.cpp
 Thumbs.db
 *.res
 *.rc
+# But allow our Windows resource file for app icon
+!resources/app.rc
 /.qmake.cache
 /.qmake.stash
 
@@ -81,3 +83,9 @@ CMakeLists.txt.user*
 .uic/
 /build*/
 /deploy/*
+/rpm-build-root/*
+/staging/*
+
+# AppImage build artifacts
+/tools/
+*.AppImage
