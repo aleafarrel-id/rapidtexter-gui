@@ -15,6 +15,26 @@
 
 ---
 
+## 🔄 Migrated from Rapid Texter (TUI)
+
+> [!IMPORTANT]
+> This application is a **GUI (Graphical User Interface)** of the original terminal-based application: **[Rapid Texter (TUI)](https://github.com/aleafarrel-id/rapid-texter)**.
+
+The original Rapid Texter uses a **TUI (Terminal User Interface)** that runs in the terminal. This version brings the same experience with a modern **GUI (Graphical User Interface)** powered by Qt/QML.
+
+### ✅ Full Data Synchronization
+
+Both applications share the **same data directory**, meaning:
+
+- **📜 History**: All your typing session records are preserved and accessible from both versions.
+- **📈 Progress**: Your campaign progress, completed levels, and achievements stay intact.
+- **⚙️ Personalization**: Settings and preferences are synchronized between TUI and GUI versions.
+
+> [!TIP]
+> You can use both versions interchangeably! Switch between the terminal (TUI) and graphical (GUI) versions whenever you prefer, and your data will always be in sync.
+
+---
+
 ## ⚡ Key Features
 
 * **✨ Modern GUI:** Built with **Qt/QML 6.8**, delivering an aesthetic and responsive interface.
