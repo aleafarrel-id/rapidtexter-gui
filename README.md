@@ -212,5 +212,5 @@ This project is licensed under the **MIT License**. Free to use, modify, and dis
 
 ---
 <div align="center">
-  Developed 2025 by Alea Farrel & Team.
+  Developed 2026 by Alea Farrel & Team.
 </div>
