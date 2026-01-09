@@ -604,6 +604,17 @@ FocusScope {
         }
     }
 
+    // Listen for countdown signal from host - this triggers transition for guests
+    Connections {
+        target: NetworkManager
+
+        function onCountdownStarted(seconds) {
+            // When countdown starts, transition to race gameplay page
+            // This is triggered for BOTH host and guests
+            lobbyPage.startGameClicked();
+        }
+    }
+
     Keys.onPressed: function (event) {
         if (event.key === Qt.Key_Escape) {
             NetworkManager.leaveRoom();
