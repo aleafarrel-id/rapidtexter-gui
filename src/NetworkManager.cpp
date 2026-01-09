@@ -579,6 +579,10 @@ void NetworkManager::onPeerDisconnected() {
         qDebug() << "[NetworkManager] Peer disconnected:" << disconnectedName << "(" << disconnectedUuid << ")";
         removePeer(disconnectedUuid);
         
+        // Remove from players list (critical for race completion check)
+        m_players.remove(disconnectedUuid);
+        emit playersChanged();
+        
         // Notify about player leaving
         if (!disconnectedName.isEmpty()) {
             emit playerLeft(disconnectedName);
@@ -586,6 +590,9 @@ void NetworkManager::onPeerDisconnected() {
         
         // Update authority
         updateAuthority();
+        
+        // Check if race can now complete (in case player left mid-race)
+        checkRaceCompletion();
     } else {
         // Clean up pending connections
         QString pendingKey = socket->property("pendingKey").toString();

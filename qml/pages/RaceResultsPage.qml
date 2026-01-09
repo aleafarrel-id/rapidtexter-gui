@@ -361,7 +361,6 @@ FocusScope {
             color: Theme.bgSecondary
             border.color: Theme.borderSecondary
             border.width: 1
-            radius: 16
 
             Column {
                 anchors.centerIn: parent
@@ -372,12 +371,24 @@ FocusScope {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 12
 
-                    Image {
+                    Item {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        source: "qrc:/qt/qml/rapid_texter/assets/icons/refresh.svg"
                         width: 48
                         height: 48
-                        sourceSize: Qt.size(48, 48)
+
+                        Image {
+                            id: refreshIcon
+                            anchors.fill: parent
+                            source: "qrc:/qt/qml/rapid_texter/assets/icons/refresh.svg"
+                            sourceSize: Qt.size(48, 48)
+                            visible: false
+                        }
+
+                        ColorOverlay {
+                            anchors.fill: refreshIcon
+                            source: refreshIcon
+                            color: Theme.accentBlue
+                        }
                     }
 
                     Text {
