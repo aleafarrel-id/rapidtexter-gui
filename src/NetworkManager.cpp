@@ -473,7 +473,8 @@ void NetworkManager::onNewTcpConnection() {
         QString tempKey = QString("pending_%1:%2").arg(peerIp).arg(socket->peerPort());
         m_peers[tempKey] = peer;
         
-        qDebug() << "[NetworkManager] Incoming connection from" << peerIp;
+        qDebug() << "[NetworkManager] Incoming connection from" << peerIp << "Socket:" << socket;
+        qDebug() << "[NetworkManager] Added to m_peers with key:" << tempKey;
         
         // Send our HELLO
         sendHello(peer);
@@ -616,13 +617,23 @@ void NetworkManager::onPeerReadyRead() {
     }
     
     if (!peer) {
+        // Fallback for outgoing connections
         peer = static_cast<PeerConnection*>(socket->property("peerPtr").value<void*>());
     }
     
-    if (!peer) return;
+    if (!peer) {
+        qDebug() << "[NetworkManager] ERROR: onPeerReadyRead called for unknown socket:" << socket;
+        // Print all known sockets
+        for (auto it = m_peers.begin(); it != m_peers.end(); ++it) {
+            qDebug() << "  Known socket:" << it.value()->socket;
+        }
+        return;
+    }
     
     // Append to buffer
-    peer->readBuffer.append(socket->readAll());
+    QByteArray newData = socket->readAll();
+    peer->readBuffer.append(newData);
+    // qDebug() << "[NetworkManager] Read" << newData.size() << "bytes from" << peer->name;
     
     // Process complete packets
     while (peer->readBuffer.size() >= 4) {
@@ -843,6 +854,18 @@ void NetworkManager::connectToMissingPeers(const QJsonArray& peerList) {
 // ============================================================================
 
 void NetworkManager::processPacket(PeerConnection* peer, const Packet& packet) {
+    // Log selected packet types to debug
+    if (packet.type == PacketType::PROGRESS_UPDATE) {
+        // Throttled logging
+        static int procLogCounter = 0;
+        if (procLogCounter++ % 20 == 0) {
+            qDebug() << "[NetworkManager] Processing PROGRESS_UPDATE from" << packet.senderUuid;
+        }
+    } else if (packet.type != PacketType::PROGRESS_UPDATE) {
+         // Log others normally (except maybe repeated ones)
+         // qDebug() << "[NetworkManager] Processing packet type" << (int)packet.type << "from" << packet.senderUuid;
+    }
+
     switch (packet.type) {
         case PacketType::HELLO:
             handleHello(peer, packet);
