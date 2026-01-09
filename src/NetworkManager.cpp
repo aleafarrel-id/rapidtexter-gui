@@ -471,6 +471,11 @@ void NetworkManager::onNewTcpConnection() {
         
         // Store with temporary key
         QString tempKey = QString("pending_%1:%2").arg(peerIp).arg(socket->peerPort());
+        
+        // Store properties for lookup
+        socket->setProperty("peerPtr", QVariant::fromValue(static_cast<void*>(peer)));
+        socket->setProperty("pendingKey", tempKey);
+        
         m_peers[tempKey] = peer;
         
         qDebug() << "[NetworkManager] Incoming connection from" << peerIp << "Socket:" << socket;
@@ -1379,7 +1384,9 @@ void NetworkManager::handleProgressUpdate(PeerConnection* peer, const Packet& pa
     QString playerId = packet.senderUuid;
     
     if (!m_players.contains(playerId)) {
-        qDebug() << "[NetworkManager] WARN: Received PROGRESS_UPDATE from unknown player:" << playerId;
+        qDebug() << "[NetworkManager] WARN: Ignoring PROGRESS_UPDATE from unknown player:" << playerId;
+         // Print known keys for debugging
+         qDebug() << "[NetworkManager] Known players:" << m_players.keys();
         return;
     }
     
@@ -1387,12 +1394,13 @@ void NetworkManager::handleProgressUpdate(PeerConnection* peer, const Packet& pa
     player.position = packet.payload["position"].toInt();
     player.totalChars = packet.payload["total"].toInt();
     player.wpm = packet.payload["wpm"].toInt();
+    player.finished = packet.payload["finished"].toBool();
     
-    // Debug log (throttled)
+    // Debug log
     static int recvLogCounter = 0;
     if (recvLogCounter++ % 20 == 0) {
-        qDebug() << "[NetworkManager] Received PROGRESS_UPDATE from" << player.name 
-                 << "pos=" << player.position << "total=" << player.totalChars;
+        qDebug() << "[NetworkManager] Updated progress for" << player.name 
+                 << "pos=" << player.position << "finished=" << player.finished;
     }
     
     double progress = player.totalChars > 0 ? 
