@@ -968,6 +968,7 @@ void NetworkManager::updateAuthority() {
                 // We are the new authority!
                 m_isAuthority = true;
                 m_hostUuid = m_playerId;  // Update host UUID to self
+                startAnnouncing();  // Start broadcasting so new players can discover this room
                 qDebug() << "[NetworkManager] Authority transferred to us! We are now the host.";
             } else {
                 m_isAuthority = false;
@@ -1140,7 +1141,7 @@ void NetworkManager::setGameLanguage(const QString& language) {
 }
 
 void NetworkManager::refreshGameText() {
-    if (!m_isRoomCreator) return;  // Only host can refresh text
+    if (!m_isAuthority) return;  // Only authority (host) can refresh text
     
     // Use GameBackend to generate text based on language
     GameBackend* backend = GameBackend::instance();
@@ -1152,7 +1153,7 @@ void NetworkManager::refreshGameText() {
 }
 
 void NetworkManager::startCountdown() {
-    if (!m_isRoomCreator) {
+    if (!m_isAuthority) {
         qDebug() << "[NetworkManager] Only room creator (host) can start the game";
         return;
     }
