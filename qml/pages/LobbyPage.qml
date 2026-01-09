@@ -580,8 +580,9 @@ FocusScope {
                     variant: "primary"
                     enabled: players.length >= 1 && gameText.length > 0
                     onClicked: {
+                        // Only trigger countdown - page transition handled by onCountdownStarted signal
+                        // This ensures host and guest transition together after countdown sync
                         NetworkManager.startCountdown();
-                        lobbyPage.startGameClicked();
                     }
                 }
 

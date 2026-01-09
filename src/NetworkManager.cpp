@@ -1267,6 +1267,7 @@ void NetworkManager::handlePlayerLeft(const Packet& packet) {
     }
     
     updateAuthority();
+    checkRaceCompletion();
 }
 
 void NetworkManager::handleRaceResults(const Packet& packet) {
@@ -1275,6 +1276,11 @@ void NetworkManager::handleRaceResults(const Packet& packet) {
     for (const auto& r : arr) {
         rankings.append(r.toObject().toVariantMap());
     }
+    
+    // Store rankings as property
+    m_rankings = rankings;
+    emit rankingsChanged();
+    
     emit raceFinished(rankings);
     
     m_isInGame = false;
@@ -1300,7 +1306,6 @@ void NetworkManager::updateProgress(int position, int totalChars, int wpm) {
 }
 
 void NetworkManager::finishRace(int wpm, double accuracy, int errors) {
-    Q_UNUSED(accuracy)
     Q_UNUSED(errors)
     
     m_localFinished = true;
@@ -1311,11 +1316,13 @@ void NetworkManager::finishRace(int wpm, double accuracy, int errors) {
         m_players[m_playerId].finishTime = QDateTime::currentMSecsSinceEpoch();
         m_players[m_playerId].racePosition = m_finishedCount;
         m_players[m_playerId].wpm = wpm;
+        m_players[m_playerId].accuracy = accuracy;
     }
     
-    // Broadcast finish
+    // Broadcast finish with accuracy
     QJsonObject payload;
     payload["wpm"] = wpm;
+    payload["accuracy"] = accuracy;
     payload["position"] = m_finishedCount;
     
     Packet packet = createPacket(PacketType::FINISH, payload);
@@ -1355,6 +1362,7 @@ void NetworkManager::handleProgressUpdate(PeerConnection* peer, const Packet& pa
 }
 
 void NetworkManager::handleFinish(PeerConnection* peer, const Packet& packet) {
+    Q_UNUSED(peer)
     QString playerId = packet.senderUuid;
     
     if (!m_players.contains(playerId)) return;
@@ -1368,6 +1376,7 @@ void NetworkManager::handleFinish(PeerConnection* peer, const Packet& packet) {
         player.finishTime = QDateTime::currentMSecsSinceEpoch();
         player.racePosition = m_finishedCount;
         player.wpm = packet.payload["wpm"].toInt();
+        player.accuracy = packet.payload["accuracy"].toDouble(100.0);
         
         emit playerProgressUpdated(playerId, player.name, 1.0, player.wpm, 
                                    true, player.racePosition);
@@ -1399,9 +1408,14 @@ void NetworkManager::checkRaceCompletion() {
             map["id"] = player.uuid;
             map["name"] = player.name;
             map["wpm"] = player.wpm;
+            map["accuracy"] = player.accuracy;
             map["position"] = player.racePosition;
             rankings.append(map);
         }
+        
+        // Store rankings as property
+        m_rankings = rankings;
+        emit rankingsChanged();
         
         // Broadcast results
         QJsonArray arr;
@@ -1477,6 +1491,7 @@ void NetworkManager::resetState() {
     m_localFinished = false;
     m_finishedCount = 0;
     m_pendingConnections.clear();
+    m_rankings.clear();
     
     // Ready check state
     m_isWaitingForReady = false;
@@ -1495,6 +1510,7 @@ void NetworkManager::resetState() {
     emit gameTextChanged();
     emit peersChanged();
     emit waitingForReadyChanged();
+    emit rankingsChanged();
 }
 
 void NetworkManager::setSelectedInterface(const QString& ip) {

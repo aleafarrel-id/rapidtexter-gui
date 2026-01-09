@@ -279,6 +279,18 @@ FocusScope {
                                     font.pixelSize: Theme.fontSizeSM
                                 }
                             }
+
+                            // Accuracy
+                            Row {
+                                spacing: 4
+
+                                Text {
+                                    text: (modelData.accuracy !== undefined ? Math.round(modelData.accuracy) : 100) + "%"
+                                    color: Theme.textMuted
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSizeSM
+                                }
+                            }
                         }
 
                         Rectangle {

@@ -51,6 +51,7 @@ class NetworkManager : public QObject {
     Q_PROPERTY(bool isConnecting READ isConnecting NOTIFY connectingChanged)
     Q_PROPERTY(QString selectedInterface READ selectedInterface WRITE setSelectedInterface NOTIFY selectedInterfaceChanged)
     Q_PROPERTY(bool isWaitingForReady READ isWaitingForReady NOTIFY waitingForReadyChanged)
+    Q_PROPERTY(QVariantList rankings READ rankings NOTIFY rankingsChanged)
     
 public:
     static NetworkManager* instance();
@@ -126,6 +127,7 @@ public:
     QString connectionError() const { return m_connectionError; }
     int peerCount() const { return m_peers.size(); }
     QVariantList availableInterfaces() const;
+    QVariantList rankings() const { return m_rankings; }
     bool isConnecting() const { return m_isConnecting; }
     QString selectedInterface() const { return m_selectedInterface; }
     
@@ -148,6 +150,7 @@ signals:
     void peersChanged();
     void waitingForReadyChanged();
     void allPlayersReady();
+    void rankingsChanged();
     
     // Game flow signals
     void playerJoined(const QString& name);
@@ -234,6 +237,7 @@ private:
         int position = 0;
         int totalChars = 0;
         int wpm = 0;
+        double accuracy = 100.0;
         bool finished = false;
         int racePosition = 0;
         qint64 finishTime = 0;
@@ -257,6 +261,7 @@ private:
     int m_currentWpm = 0;
     bool m_localFinished = false;
     int m_finishedCount = 0;
+    QVariantList m_rankings;
     
     // Progress timer
     QTimer* m_progressTimer = nullptr;
