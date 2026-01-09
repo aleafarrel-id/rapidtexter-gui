@@ -432,8 +432,7 @@ ApplicationWindow {
                 stackView.push(raceGameplayComponent);
             }
             onLeaveClicked: {
-                stackView.pop(null);
-                stackView.push(multiplayerMenuComponent);
+                stackView.replace(null, multiplayerMenuComponent);
             }
         }
     }
@@ -454,8 +453,7 @@ ApplicationWindow {
                 });
             }
             onExitClicked: {
-                stackView.pop(null);
-                stackView.push(multiplayerMenuComponent);
+                stackView.replace(null, multiplayerMenuComponent);
             }
         }
     }
@@ -478,8 +476,7 @@ ApplicationWindow {
             }
 
             onExitClicked: {
-                stackView.pop(null);
-                stackView.push(multiplayerMenuComponent);
+                stackView.replace(null, multiplayerMenuComponent);
             }
         }
     }
