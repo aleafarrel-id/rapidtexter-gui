@@ -558,6 +558,13 @@ FocusScope {
         focus: true
 
         Keys.onPressed: function (event) {
+            // ESC key: leave race instead of processing as input
+            if (event.key === Qt.Key_Escape) {
+                NetworkManager.leaveRoom();
+                raceGameplayPage.exitClicked();
+                event.accepted = true;
+                return;
+            }
             handleKeyPress(event);
             event.accepted = true;
         }

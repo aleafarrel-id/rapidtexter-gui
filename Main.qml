@@ -433,7 +433,7 @@ ApplicationWindow {
             }
             onLeaveClicked: {
                 stackView.pop(null);
-                stackView.push(mainMenuComponent);
+                stackView.push(multiplayerMenuComponent);
             }
         }
     }
@@ -455,7 +455,7 @@ ApplicationWindow {
             }
             onExitClicked: {
                 stackView.pop(null);
-                stackView.push(mainMenuComponent);
+                stackView.push(multiplayerMenuComponent);
             }
         }
     }
@@ -479,7 +479,7 @@ ApplicationWindow {
 
             onExitClicked: {
                 stackView.pop(null);
-                stackView.push(mainMenuComponent);
+                stackView.push(multiplayerMenuComponent);
             }
         }
     }

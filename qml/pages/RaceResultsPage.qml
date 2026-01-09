@@ -289,7 +289,7 @@ FocusScope {
                                 spacing: 4
 
                                 Text {
-                                    text: (modelData.accuracy !== undefined ? Math.round(modelData.accuracy) : 100) + "%"
+                                    text: (modelData.accuracy !== undefined ? modelData.accuracy.toFixed(1) : "100.0") + "%"
                                     color: Theme.textMuted
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSizeSM
@@ -356,26 +356,28 @@ FocusScope {
 
         Rectangle {
             anchors.centerIn: parent
-            width: 340
-            height: 200
+            width: 380
+            height: 260
             color: Theme.bgSecondary
-            border.color: Theme.accentBlue
-            border.width: 2
-            radius: 12
+            border.color: Theme.borderSecondary
+            border.width: 1
+            radius: 16
 
             Column {
                 anchors.centerIn: parent
-                spacing: 20
+                spacing: 24
 
                 // Icon and title
                 Column {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 8
+                    spacing: 12
 
-                    Text {
+                    Image {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: "🎮"
-                        font.pixelSize: 36
+                        source: "qrc:/qt/qml/rapid_texter/assets/icons/refresh.svg"
+                        width: 48
+                        height: 48
+                        sourceSize: Qt.size(48, 48)
                     }
 
                     Text {
@@ -383,7 +385,7 @@ FocusScope {
                         text: "Play Again?"
                         color: Theme.textPrimary
                         font.family: Theme.fontFamily
-                        font.pixelSize: 22
+                        font.pixelSize: 24
                         font.bold: true
                     }
                 }
@@ -393,12 +395,12 @@ FocusScope {
                     text: "Host wants to start another race!"
                     color: Theme.textSecondary
                     font.family: Theme.fontFamily
-                    font.pixelSize: 14
+                    font.pixelSize: 16
                 }
 
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 16
+                    spacing: 20
 
                     NavBtn {
                         labelText: "Accept"
@@ -436,9 +438,31 @@ FocusScope {
     }
 
     Keys.onPressed: function (event) {
-        if (event.key === Qt.Key_Escape && !showInvitePopup) {
+        // ESC to exit (or decline when popup shown)
+        if (event.key === Qt.Key_Escape) {
+            if (showInvitePopup) {
+                // Decline invite
+                showInvitePopup = false;
+                NetworkManager.declinePlayAgain();
+            }
             NetworkManager.leaveRoom();
             resultsPage.exitClicked();
+            event.accepted = true;
+            return;
+        }
+
+        // P for Play Again (host) or Accept (guest with popup)
+        if (event.key === Qt.Key_P) {
+            if (showInvitePopup && !NetworkManager.isAuthority) {
+                // Guest accepts invite
+                showInvitePopup = false;
+                NetworkManager.acceptPlayAgain();
+                resultsPage.returnToLobbyClicked();
+            } else if (NetworkManager.isAuthority) {
+                // Host starts play again
+                NetworkManager.sendPlayAgainInvite();
+                resultsPage.returnToLobbyClicked();
+            }
             event.accepted = true;
         }
     }
