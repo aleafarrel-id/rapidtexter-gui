@@ -28,9 +28,18 @@ FocusScope {
     // Dynamic host state - updates when authority changes
     property bool isHost: NetworkManager.isAuthority
 
+    // Refresh isHost on component creation
+    Component.onCompleted: {
+        resultsPage.isHost = NetworkManager.isAuthority;
+    }
+
     Connections {
         target: NetworkManager
         function onAuthorityChanged() {
+            resultsPage.isHost = NetworkManager.isAuthority;
+        }
+        function onPlayersChanged() {
+            // Also refresh when players change (someone leaves)
             resultsPage.isHost = NetworkManager.isAuthority;
         }
     }
