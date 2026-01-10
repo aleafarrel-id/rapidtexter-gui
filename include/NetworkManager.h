@@ -71,7 +71,8 @@ public:
         READY_CHECK,
         READY_RESPONSE,
         PLAY_AGAIN_INVITE,    // Host invites guests to play again
-        PLAY_AGAIN_RESPONSE   // Guest accepts/declines invitation
+        PLAY_AGAIN_RESPONSE,  // Guest accepts/declines invitation
+        KICK                  // Host kicks a player
     };
     Q_ENUM(PacketType)
     
@@ -177,6 +178,7 @@ signals:
     void joinFailed(const QString& reason);
     void connectingChanged();
     void selectedInterfaceChanged();
+    void kicked();  // Emitted when this player is kicked by host
     
     // Play again signals
     void playAgainInviteReceived();           // Guest receives invite from host
@@ -335,6 +337,7 @@ private:
     // Play Again handlers
     void handlePlayAgainInvite(const Packet& packet);
     void handlePlayAgainResponse(PeerConnection* peer, const Packet& packet);
+    void handleKick(const Packet& packet);
     
     // Utilities
     void setConnectionError(const QString& error);

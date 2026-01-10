@@ -760,6 +760,81 @@ FocusScope {
             // This is triggered for BOTH host and guests
             lobbyPage.startGameClicked();
         }
+
+        function onKicked() {
+            // Show kicked notification and navigate to menu
+            kickedNotification.visible = true;
+        }
+    }
+
+    // Kicked notification overlay
+    Rectangle {
+        id: kickedNotification
+        anchors.fill: parent
+        color: Qt.rgba(0, 0, 0, 0.7)
+        visible: false
+        z: 2000
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 320
+            height: 160
+            radius: 12
+            color: Theme.bgSecondary
+            border.color: Theme.accentRed
+            border.width: 2
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 20
+                spacing: 16
+
+                Text {
+                    Layout.fillWidth: true
+                    text: "Kicked from Room"
+                    color: Theme.accentRed
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeL
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    text: "You have been kicked by the host."
+                    color: Theme.textSecondary
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeM
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 36
+                    radius: 8
+                    color: Theme.accentBlue
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "OK"
+                        color: "white"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeM
+                        font.bold: true
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            kickedNotification.visible = false;
+                            lobbyPage.leaveClicked();
+                        }
+                    }
+                }
+            }
+        }
     }
 
     Keys.onPressed: function (event) {

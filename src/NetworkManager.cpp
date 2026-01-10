@@ -924,6 +924,9 @@ void NetworkManager::processPacket(PeerConnection* peer, const Packet& packet) {
         case PacketType::PLAY_AGAIN_RESPONSE:
             handlePlayAgainResponse(peer, packet);
             break;
+        case PacketType::KICK:
+            handleKick(packet);
+            break;
     }
 }
 
@@ -935,6 +938,17 @@ void NetworkManager::broadcastToAllPeers(const Packet& packet) {
             it.value()->socket->flush();
         }
     }
+}
+
+void NetworkManager::handleKick(const Packet& packet) {
+    Q_UNUSED(packet)
+    qDebug() << "[NetworkManager] Received KICK packet - we have been kicked by the host";
+    
+    // Emit kicked signal so QML can show notification
+    emit kicked();
+    
+    // Leave the room (this will clean up and navigate back)
+    leaveRoom();
 }
 
 void NetworkManager::sendToPeer(PeerConnection* peer, const Packet& packet) {
@@ -1305,7 +1319,13 @@ void NetworkManager::kickPlayer(const QString& uuid) {
     PeerConnection* peer = m_peers[uuid];
     QString name = peer->name;
     
-    // Notify others
+    // Send KICK packet directly to the kicked player
+    QJsonObject kickPayload;
+    kickPayload["reason"] = "You have been kicked by the host";
+    Packet kickPacket = createPacket(PacketType::KICK, kickPayload);
+    sendToPeer(peer, kickPacket);
+    
+    // Notify others about player leaving
     QJsonObject payload;
     payload["uuid"] = uuid;
     payload["name"] = name;
@@ -1529,10 +1549,17 @@ void NetworkManager::checkRaceCompletion() {
     }
     
     if (allFinished && m_isAuthority) {
-        // Build rankings
+        // Build rankings sorted by: WPM (desc) > Accuracy (desc) > Errors (asc) > Duration (asc)
         QList<PlayerInfo> sorted = m_players.values();
         std::sort(sorted.begin(), sorted.end(), [](const PlayerInfo& a, const PlayerInfo& b) {
-            return a.racePosition < b.racePosition;
+            // Primary: WPM (higher is better)
+            if (a.wpm != b.wpm) return a.wpm > b.wpm;
+            // Secondary: Accuracy (higher is better)
+            if (a.accuracy != b.accuracy) return a.accuracy > b.accuracy;
+            // Tertiary: Errors (lower is better)
+            if (a.errors != b.errors) return a.errors < b.errors;
+            // Quaternary: Duration (lower is better)
+            return a.duration < b.duration;
         });
         
         // Calculate relative time from first finisher
