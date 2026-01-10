@@ -229,8 +229,11 @@ FocusScope {
                         color: modelData.isLocal ? Qt.rgba(0.34, 0.65, 1, 0.1) : "transparent"
 
                         RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 12
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.leftMargin: 12
+                            anchors.rightMargin: 12
                             spacing: 8
 
                             // Position medal
